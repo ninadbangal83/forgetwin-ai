@@ -1,4 +1,8 @@
-﻿{
+{
   "name": "@forgetwin/cad-processor",
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "scripts": {
+    "lint": "echo No python linter required"
+  }
 }
+

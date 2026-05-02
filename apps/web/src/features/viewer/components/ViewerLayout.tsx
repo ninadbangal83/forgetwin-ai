@@ -12,20 +12,22 @@ import { SectionControls } from '../tools/SectionControls';
 import { MeasurementPanel } from '../tools/MeasurementPanel';
 import { ExplodeSlider } from '../tools/ExplodeSlider';
 
+import { ModelData } from '@/types/viewer';
+
 interface ViewerLayoutProps {
   modelId: string;
 }
 
 export function ViewerLayout({ modelId }: ViewerLayoutProps) {
   const dispatch = useDispatch();
-  const [modelData, setModelData] = useState<any>(null);
+  const [modelData, setModelData] = useState<ModelData | null>(null);
   const [showHierarchy, setShowHierarchy] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
   
   const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
 
   useEffect(() => {
-    let intervalId: any;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const fetchMetadata = async () => {
       try {
@@ -59,7 +61,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
         const data = raw.data || raw;
         setModelData(data);
         if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-          clearInterval(intervalId);
+          if (intervalId) clearInterval(intervalId);
           if (data.assemblyTree) {
             dispatch(setAssemblyTree(data.assemblyTree));
           }
@@ -108,7 +110,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
   return (
     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-800/80 shadow-2xl overflow-hidden select-none">
       {/* 100% Width Canvas Center Panel as the base layer */}
-      <ViewerShell modelId={modelId} downloadUrl={modelData.downloadUrl} />
+      <ViewerShell modelId={modelId} downloadUrl={modelData.downloadUrl || ''} />
 
       {/* Floating Controls rendered on top */}
       <div className="absolute top-4 left-24 z-50 flex gap-2">
@@ -183,7 +185,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
             <button onClick={() => setShowMetadata(false)} className="text-slate-500 hover:text-slate-300 transition-colors">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <MetadataPanel globalMetadata={modelData.metadata} />
+            <MetadataPanel globalMetadata={modelData.metadata || null} />
           </div>
         </div>
       )}

@@ -9,7 +9,7 @@ export class ExplodeManager {
     const box = new THREE.Box3().setFromObject(model);
     box.getCenter(this.groupCenter);
 
-    model.traverse((child: any) => {
+    model.traverse((child: THREE.Object3D & { isMesh?: boolean }) => {
       // Store exact original local positions
       if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {
         this.initialPositions.set(child, child.position.clone());
@@ -23,7 +23,7 @@ export class ExplodeManager {
     // factor is 0 to 100. We map it to 0 to 20x multiplier
     const multiplier = factor * 0.2;
 
-    model.traverse((child: any) => {
+    model.traverse((child: THREE.Object3D & { isMesh?: boolean }) => {
       if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {
         const initialPos = this.initialPositions.get(child);
         if (!initialPos) return;

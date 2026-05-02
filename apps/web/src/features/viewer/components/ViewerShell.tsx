@@ -1,4 +1,5 @@
 'use client';
+import { _any } from '@/types/viewer';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ThreeEngine } from '@/engine/ThreeEngine';
@@ -6,6 +7,7 @@ import { RootState } from '@/store/store';
 import { setSelectedNodeId } from '@/store/viewerSlice';
 import { addMeasurement } from '@/store/viewerToolsSlice';
 import { StreamingDiagnostics } from '../streaming/StreamingDiagnostics';
+import { StreamingMetrics } from '@/types/viewer';
 
 interface ViewerShellProps {
   modelId: string;
@@ -16,7 +18,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ThreeEngine | null>(null);
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<StreamingMetrics | null>(null);
   
   const dispatch = useDispatch();
   
@@ -54,7 +56,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
 
     // Hook into the Streaming Engine Metrics
     engine.modelLoader.onStreamingMetrics = (data) => {
-        setMetrics({...data});
+        setMetrics(data as unknown as StreamingMetrics);
     };
 
     const loadModel = async () => {
@@ -67,7 +69,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
             console.log(`[ViewerShell] Finished loadFromManifest successfully!`);
         }
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`[ViewerShell] Failed to load model manifest`, err);
         setLoading(false);
       }
@@ -84,8 +86,8 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
   }, [modelId, downloadUrl, dispatch]);
 
   useEffect(() => {
-    const handleCameraAction = (e: any) => {
-      const action = e.detail;
+    const handleCameraAction = (e: Event) => {
+      const action = (e as CustomEvent).detail;
       if (!engineRef.current) return;
       if (action === 'home') engineRef.current.home();
       else if (action === 'orbit') engineRef.current.setOrbitMode();
@@ -135,7 +137,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
 
   return (
     <div className="absolute inset-0 outline-none bg-slate-950 rounded shadow-inner">
-      <StreamingDiagnostics metrics={metrics} />
+      {metrics && <StreamingDiagnostics metrics={metrics} />}
       
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 backdrop-blur-sm">

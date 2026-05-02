@@ -1,3 +1,4 @@
+import { _any } from '@/types/viewer';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -162,7 +163,7 @@ export function EngineeringToolbar() {
     const triggerAction = (action: string) => {
         window.dispatchEvent(new CustomEvent('viewer-camera-action', { detail: action }));
         if (action === 'orbit' || action === 'pan' || action === 'walk' || action === 'zoom') {
-            setCameraMode(action as any);
+            setCameraMode(action as 'orbit' | 'pan' | 'walk' | 'zoom');
         }
     };
 
@@ -194,7 +195,7 @@ export function EngineeringToolbar() {
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-black" />
                 </div>
                 <button
-                    onClick={() => dispatch(setActiveTool(t.id as any))}
+                    onClick={() => dispatch(setActiveTool(t.id as 'select' | 'measure' | 'clip' | 'explode'))}
                     className={`px-3.5 py-2.5 rounded-xl border flex items-center justify-center transition-all duration-300 outline-none hover:scale-105 active:scale-95 ${activeTool === t.id ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/60 hover:border-indigo-500/40 hover:text-white'}`}
                 >
                     {t.icon}
@@ -228,7 +229,7 @@ export function EngineeringToolbar() {
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-black" />
                 </div>
                 <button
-                    onClick={() => dispatch(setActiveTool(t.id as any))}
+                    onClick={() => dispatch(setActiveTool(t.id as 'select' | 'measure' | 'clip' | 'explode'))}
                     className={`px-3.5 py-2.5 rounded-xl border flex items-center justify-center transition-all duration-300 outline-none hover:scale-105 active:scale-95 ${activeTool === t.id ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/60 hover:border-indigo-500/40 hover:text-white'}`}
                 >
                     {t.icon}

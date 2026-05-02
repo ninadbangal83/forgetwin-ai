@@ -11,9 +11,9 @@ export class CadModelsService {
   private readonly logger = new Logger(CadModelsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly storage: StorageService,
-    @InjectQueue('cad-processing') private readonly processingQueue: Queue,
+    private readonly _prisma: PrismaService,
+    private readonly _storage: StorageService,
+    @InjectQueue('cad-processing') private readonly _processingQueue: Queue,
   ) {}
 
   async processUpload(file: Express.Multer.File) {
@@ -23,9 +23,9 @@ export class CadModelsService {
     const storageKey = `raw/${modelId}${ext}`;
 
     try {
-      await this.storage.uploadFile('raw-cad', storageKey, file.buffer, file.size, file.mimetype || 'application/octet-stream');
+      await this._storage.uploadFile('raw-cad', storageKey, file.buffer, file.size, file.mimetype || 'application/octet-stream');
 
-      const model = await this.prisma.cadModel.create({
+      const model = await this._prisma.cadModel.create({
         data: {
           id: modelId,
           name: file.originalname.replace(ext, ''),
@@ -40,7 +40,7 @@ export class CadModelsService {
       });
 
       // Atomic workflow: immediately push to BullMQ after DB write
-      await this.processingQueue.add('process-step-file', {
+      await this._processingQueue.add('process-step-file', {
         modelId: model.id,
         storageKey: model.storageKey,
         correlationId,
@@ -58,16 +58,16 @@ export class CadModelsService {
   }
 
   async findAll() {
-    const models = await this.prisma.cadModel.findMany({
+    const models = await this._prisma.cadModel.findMany({
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true } as any,
+      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true },
     });
 
     const result = [];
     for (const model of models) {
       let thumbnailUrl = null;
-      if ((model as any).thumbnailKey) {
-        thumbnailUrl = await this.storage.getPresignedUrl('processed-models', (model as any).thumbnailKey);
+      if ((model as Record<string, unknown>).thumbnailKey) {
+        thumbnailUrl = await this._storage.getPresignedUrl('processed-models', (model as Record<string, unknown>).thumbnailKey as string);
         if (thumbnailUrl && thumbnailUrl.includes('host.docker.internal')) {
           thumbnailUrl = thumbnailUrl.replace('host.docker.internal', 'localhost');
         }
@@ -78,20 +78,20 @@ export class CadModelsService {
   }
 
   async findOne(id: string) {
-    const model = await this.prisma.cadModel.findUnique({ where: { id } });
+    const model = await this._prisma.cadModel.findUnique({ where: { id } });
     if (!model) throw new NotFoundException(`Model ${id} not found`);
 
     let downloadUrl = null;
     if (model.status === 'COMPLETED' && model.processedStorageKey) {
-      downloadUrl = await this.storage.getPresignedUrl('processed-models', model.processedStorageKey);
+      downloadUrl = await this._storage.getPresignedUrl('processed-models', model.processedStorageKey);
       if (downloadUrl && downloadUrl.includes('host.docker.internal')) {
         downloadUrl = downloadUrl.replace('host.docker.internal', 'localhost');
       }
     }
 
     let thumbnailUrl = null;
-    if ((model as any).thumbnailKey) {
-      thumbnailUrl = await this.storage.getPresignedUrl('processed-models', (model as any).thumbnailKey);
+    if ((model as Record<string, unknown>).thumbnailKey) {
+      thumbnailUrl = await this._storage.getPresignedUrl('processed-models', (model as Record<string, unknown>).thumbnailKey as string);
       if (thumbnailUrl && thumbnailUrl.includes('host.docker.internal')) {
         thumbnailUrl = thumbnailUrl.replace('host.docker.internal', 'localhost');
       }
@@ -100,12 +100,12 @@ export class CadModelsService {
     return { ...model, downloadUrl, thumbnailUrl };
   }
 
-  async updateStatus(id: string, data: any) {
-    return this.prisma.cadModel.update({ where: { id }, data });
+  async updateStatus(id: string, data: Record<string, unknown>) {
+    return this._prisma.cadModel.update({ where: { id }, data });
   }
 
   async getModelForCallback(id: string) {
-    return this.prisma.cadModel.findUnique({ where: { id } });
+    return this._prisma.cadModel.findUnique({ where: { id } });
   }
 
   async updateThumbnail(id: string, base64Data: string) {
@@ -118,10 +118,11 @@ export class CadModelsService {
       }
       const buffer = Buffer.from(cleaned, 'base64');
       const key = `thumbnails/${id}.png`;
-      await this.storage.uploadFile('processed-models', key, buffer, buffer.length, 'image/png');
-      return this.prisma.cadModel.update({ where: { id }, data: { thumbnailKey: key } as any });
-    } catch (err: any) {
-      this.logger.error(`Failed to update thumbnail for model ${id}: ${err.message}`);
+      await this._storage.uploadFile('processed-models', key, buffer, buffer.length, 'image/png');
+      return this._prisma.cadModel.update({ where: { id }, data: { thumbnailKey: key } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to update thumbnail for model ${id}: ${msg}`);
       throw err;
     }
   }

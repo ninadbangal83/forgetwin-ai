@@ -4,16 +4,21 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint \"{app,src}/**/*.{ts,tsx}\" --fix"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-window": "^2.0.0",
     "@types/stats.js": "^0.17.4",
     "@types/three": "^0.184.0",
-    "typescript": "^6.0.3"
+    "eslint": "^10.3.0",
+    "eslint-config-next": "^16.2.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.1"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",

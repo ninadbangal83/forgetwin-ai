@@ -1,4 +1,5 @@
 'use client';
+import { _any } from '@/types/viewer';
 import React, { useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { List } from 'react-window';
@@ -6,7 +7,7 @@ import { RootState } from '@/store/store';
 import { setSelectedNodeId, toggleNodeVisibility } from '@/store/viewerSlice';
 
 // Flatten the tree for react-window virtualization
-const flattenTree = (node: any, level = 0, hiddenIds: string[], expandedIds: Set<string>, result: any[] = []) => {
+const flattenTree = (node: _any, level = 0, hiddenIds: string[], expandedIds: Set<string>, result: _any[] = []) => {
   if (!node) return result;
   
   const isHidden = hiddenIds.includes(node.id);
@@ -22,7 +23,7 @@ const flattenTree = (node: any, level = 0, hiddenIds: string[], expandedIds: Set
   });
   
   if (isExpanded && hasChildren) {
-    node.children.forEach((child: any) => flattenTree(child, level + 1, hiddenIds, expandedIds, result));
+    node.children.forEach((child: _any) => flattenTree(child, level + 1, hiddenIds, expandedIds, result));
   }
   
   return result;
@@ -56,7 +57,7 @@ export function HierarchyPanel() {
   }
 
   // The virtualized row renderer
-  const Row = ({ index, style, data }: { index: number, style: React.CSSProperties, data: any[] }) => {
+  const Row = ({ index, style, data }: { index: number, style: React.CSSProperties, data: _any[] }) => {
     const node = data[index];
     const isSelected = selectedNodeId === node.id;
     const icon = node.type === 'Assembly' ? '📦' : '⚙️';
@@ -102,11 +103,11 @@ export function HierarchyPanel() {
         <span className="text-teal-400 font-bold">Virtualized</span>
       </div>
       <div className="flex-1 min-h-0 w-full overflow-hidden relative">
-        <List<{ data: any[] }>
+        <List<{ data: _any[] }>
           rowCount={flattenedData.length}
           rowHeight={36}
           rowProps={{ data: flattenedData }}
-          rowComponent={Row as any}
+          rowComponent={Row as _any}
           style={{ height: '800px', width: '100%' }}
           className="absolute inset-0 h-full"
         />

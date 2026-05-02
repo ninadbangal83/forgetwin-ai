@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface ViewerState {
-  assemblyTree: any | null;
+  assemblyTree: unknown | null;
   selectedNodeId: string | null;
   hiddenNodeIds: string[];
 }
@@ -16,7 +16,7 @@ export const viewerSlice = createSlice({
   name: 'viewer',
   initialState,
   reducers: {
-    setAssemblyTree: (state, action: PayloadAction<any>) => {
+    setAssemblyTree: (state, action: PayloadAction<unknown>) => {
       state.assemblyTree = action.payload;
     },
     setSelectedNodeId: (state, action: PayloadAction<string | null>) => {

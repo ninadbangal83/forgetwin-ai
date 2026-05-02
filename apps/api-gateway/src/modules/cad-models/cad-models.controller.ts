@@ -5,21 +5,21 @@ import { extname } from 'path';
 
 @Controller('cad-models')
 export class CadModelsController {
-  constructor(private readonly cadModelsService: CadModelsService) {}
+  constructor(private readonly _cadModelsService: CadModelsService) { }
 
   @Get()
   async findAll() {
-    return this.cadModelsService.findAll();
+    return this._cadModelsService.findAll();
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.cadModelsService.findOne(id);
+    return this._cadModelsService.findOne(id);
   }
 
   @Post(':id/thumbnail')
   async updateThumbnail(@Param('id') id: string, @Body('thumbnail') thumbnail: string) {
-    return this.cadModelsService.updateThumbnail(id, thumbnail);
+    return this._cadModelsService.updateThumbnail(id, thumbnail);
   }
 
   @Post('upload')
@@ -37,6 +37,6 @@ export class CadModelsController {
     if (ext !== '.step' && ext !== '.stp') {
       throw new BadRequestException('Only .step and .stp files are allowed');
     }
-    return this.cadModelsService.processUpload(file);
+    return this._cadModelsService.processUpload(file);
   }
 }

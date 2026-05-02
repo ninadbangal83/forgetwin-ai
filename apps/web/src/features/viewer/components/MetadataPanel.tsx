@@ -2,8 +2,10 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 
+import { TreeNode } from '@/types/viewer';
+
 interface MetadataPanelProps {
-  globalMetadata: any;
+  globalMetadata: Record<string, unknown> | null;
 }
 
 export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
@@ -11,7 +13,7 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
   const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
 
   // Helper to find node in tree
-  const findNode = (node: any, id: string): any => {
+  const findNode = (node: TreeNode | null | undefined, id: string): TreeNode | null => {
     if (!node) return null;
     if (node.id === id) return node;
     if (node.children) {
@@ -23,7 +25,7 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
     return null;
   };
 
-  const selectedNode = selectedNodeId ? findNode(tree, selectedNodeId) : null;
+  const selectedNode = selectedNodeId ? findNode(tree as TreeNode | null, selectedNodeId) : null;
 
   return (
     <div className="w-full h-full flex flex-col font-sans text-sm text-slate-200">
@@ -86,15 +88,15 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
         <div className="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-xl border border-slate-800/60">
           <div className="flex flex-col">
             <span className="text-slate-400 font-medium">Quality Profile</span>
-            <span className="font-bold text-white">{globalMetadata?.quality || 'N/A'}</span>
+            <span className="font-bold text-white">{String(globalMetadata?.quality || 'N/A')}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-slate-400 font-medium">Unique Solids</span>
-            <span className="font-bold text-white">{globalMetadata?.uniqueShapes || 'N/A'}</span>
+            <span className="font-bold text-white">{String(globalMetadata?.uniqueShapes || 'N/A')}</span>
           </div>
           <div className="flex flex-col mt-2">
             <span className="text-slate-400 font-medium">Physical Entities</span>
-            <span className="font-bold text-white">{globalMetadata?.totalInstances || 'N/A'}</span>
+            <span className="font-bold text-white">{String(globalMetadata?.totalInstances || 'N/A')}</span>
           </div>
         </div>
       </div>

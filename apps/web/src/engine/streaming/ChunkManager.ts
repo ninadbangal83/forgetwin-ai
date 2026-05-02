@@ -1,3 +1,4 @@
+import { _any } from '@/types/viewer';
 import * as THREE from 'three';
 import { FrustumManager } from './FrustumManager';
 import { MemoryManager } from './MemoryManager';
@@ -33,8 +34,8 @@ export class ChunkManager {
   private loadingStates: Map<string, boolean> = new Map();
 
   // Callbacks for global optimizations (Clipping, Instancing)
-  public onChunkLoaded?: (group: THREE.Group) => void;
-  public onMetricsUpdate?: (metrics: any) => void;
+  public onChunkLoaded?: (_group: THREE.Group) => void;
+  public onMetricsUpdate?: (_metrics: _any) => void;
 
   public metrics = { loaded: 0, loading: 0, visible: 0, lod0: 0, lod1: 0, lod2: 0 };
 
@@ -152,12 +153,14 @@ export class ChunkManager {
   }
 
   private disposeGroup(group: THREE.Group) {
-    group.traverse((child: any) => {
-      if (child.isMesh) {
-        if (child.geometry.disposeBoundsTree) child.geometry.disposeBoundsTree();
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) child.material.dispose();
-        else if (Array.isArray(child.material)) child.material.forEach((m: any) => m.dispose());
+    group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const mesh = child;
+        const geom = mesh.geometry as THREE.BufferGeometry & { disposeBoundsTree?: () => void };
+        if (geom.disposeBoundsTree) geom.disposeBoundsTree();
+        mesh.geometry.dispose();
+        if (mesh.material instanceof THREE.Material) mesh.material.dispose();
+        else if (Array.isArray(mesh.material)) mesh.material.forEach((m: THREE.Material) => m.dispose());
       }
     });
   }

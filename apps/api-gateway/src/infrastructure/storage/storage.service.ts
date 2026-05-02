@@ -6,7 +6,7 @@ export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly BUCKETS = ['raw-cad', 'processed-models', 'thumbnails'];
 
-  constructor(@Inject('MINIO_CLIENT') private readonly minioClient: Client) {}
+  constructor(@Inject('MINIO_CLIENT') private readonly _minioClient: Client) { }
 
   async onModuleInit() {
     await this.initializeBuckets();
@@ -15,9 +15,9 @@ export class StorageService implements OnModuleInit {
   private async initializeBuckets() {
     for (const bucket of this.BUCKETS) {
       try {
-        const exists = await this.minioClient.bucketExists(bucket);
+        const exists = await this._minioClient.bucketExists(bucket);
         if (!exists) {
-          await this.minioClient.makeBucket(bucket, 'us-east-1');
+          await this._minioClient.makeBucket(bucket, 'us-east-1');
           this.logger.log(`Created MinIO bucket: ${bucket}`);
         }
         if (bucket === 'processed-models') {
@@ -32,7 +32,7 @@ export class StorageService implements OnModuleInit {
               },
             ],
           };
-          await this.minioClient.setBucketPolicy(bucket, JSON.stringify(policy));
+          await this._minioClient.setBucketPolicy(bucket, JSON.stringify(policy));
           this.logger.log(`Public read policy applied to MinIO bucket: ${bucket}`);
         }
       } catch (error) {
@@ -42,11 +42,11 @@ export class StorageService implements OnModuleInit {
   }
 
   async uploadFile(bucket: string, key: string, stream: Buffer, size: number, mimeType: string): Promise<string> {
-    await this.minioClient.putObject(bucket, key, stream, size, { 'Content-Type': mimeType });
+    await this._minioClient.putObject(bucket, key, stream, size, { 'Content-Type': mimeType });
     return key;
   }
 
   async getPresignedUrl(bucket: string, key: string, expiryInSeconds: number = 24 * 60 * 60): Promise<string> {
-    return this.minioClient.presignedGetObject(bucket, key, expiryInSeconds);
+    return this._minioClient.presignedGetObject(bucket, key, expiryInSeconds);
   }
 }

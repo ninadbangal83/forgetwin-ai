@@ -5,7 +5,7 @@ export class StreamingService {
   // Mock CDN/Cache tracking in memory
   private cacheHits = 0;
   private cacheMisses = 0;
-  private telemetryData: Map<string, any[]> = new Map();
+  private telemetryData: Map<string, Record<string, unknown>[]> = new Map();
 
   public async getPrioritizedManifest(modelId: string) {
     // Generate prioritized chunk recommendations & predictive viewport caching hints
@@ -26,7 +26,7 @@ export class StreamingService {
     };
   }
 
-  public recordTelemetry(modelId: string, metrics: any) {
+  public recordTelemetry(modelId: string, metrics: Record<string, unknown>) {
     if (!this.telemetryData.has(modelId)) {
       this.telemetryData.set(modelId, []);
     }
@@ -41,7 +41,7 @@ export class StreamingService {
     return {
       modelId,
       totalStreamingSessions: records.length,
-      averageGpuMemoryMB: records.reduce((acc, cur) => acc + (cur.gpuMemory || 0), 0) / (records.length || 1),
+      averageGpuMemoryMB: records.reduce((acc, cur) => acc + (Number(cur.gpuMemory) || 0), 0) / (records.length || 1),
       cachePerformance: {
         hits: this.cacheHits,
         misses: this.cacheMisses,
@@ -51,3 +51,4 @@ export class StreamingService {
     };
   }
 }
+

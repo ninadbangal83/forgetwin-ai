@@ -1,3 +1,4 @@
+import { _any } from '@/types/viewer';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'stats.js';
@@ -35,11 +36,11 @@ export class ThreeEngine {
   private isolateMaterial: THREE.MeshStandardMaterial;
   private selectedMesh: THREE.Mesh | null = null;
   private originalMaterial: THREE.Material | null = null;
-  private onMouseMove: (e: MouseEvent) => void = () => { };
-  private onWheel: (e: WheelEvent) => void = () => { };
+  private onMouseMove: (_e: MouseEvent) => void = () => { };
+  private onWheel: (_e: WheelEvent) => void = () => { };
 
-  public onNodeSelected?: (nodeId: string | null) => void;
-  public onMeasurementComplete?: (dist: number, p1: number[], p2: number[]) => void;
+  public onNodeSelected?: (_nodeId: string | null) => void;
+  public onMeasurementComplete?: (_dist: number, _p1: number[], _p2: number[]) => void;
 
   constructor(container: HTMLElement) {
     console.log('[ThreeEngine] Initializing WebGL instance and attaching container...');
@@ -120,11 +121,11 @@ export class ThreeEngine {
     };
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove);
 
-    this.onWheel = (event: WheelEvent) => {
+    this.onWheel = (_event: WheelEvent) => {
       if (!this.modelLoader.currentModel) return;
       this.raycaster.setFromCamera(this.mouse, this.camera);
       const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(
-        i => i.object.visible && (i.object as any).material !== this.isolateMaterial
+        i => i.object.visible && (i.object as _any).material !== this.isolateMaterial
       );
       if (intersects.length > 0) {
         const hitPoint = intersects[0].point;
@@ -199,7 +200,7 @@ export class ThreeEngine {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
     // Ignore invisible/ghosted objects during raycasting interaction
-    const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(i => i.object.visible && (i.object as any).material !== this.isolateMaterial);
+    const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(i => i.object.visible && (i.object as _any).material !== this.isolateMaterial);
 
     if (intersects.length > 0) {
       if (this.activeTool === 'measure') {
@@ -212,7 +213,7 @@ export class ThreeEngine {
       }
 
       if (this.activeTool === 'select' || this.activeTool === 'clip') {
-        let mesh = intersects[0].object as THREE.Mesh | THREE.InstancedMesh;
+        const mesh = intersects[0].object as THREE.Mesh | THREE.InstancedMesh;
         let nodeId = mesh.userData.nodeId;
         if (mesh instanceof THREE.InstancedMesh && intersects[0].instanceId !== undefined) {
           nodeId = mesh.userData.instanceNodeIds[intersects[0].instanceId];
@@ -233,7 +234,7 @@ export class ThreeEngine {
       this.originalMaterial = null;
     }
     if (!nodeId || !this.modelLoader.currentModel) return;
-    this.modelLoader.currentModel.traverse((child: any) => {
+    this.modelLoader.currentModel.traverse((child: _any) => {
       if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.nodeId === nodeId) {
         this.selectedMesh = child;
         this.originalMaterial = child.material;
@@ -246,7 +247,7 @@ export class ThreeEngine {
   public setHiddenNodes(hiddenIds: string[]) {
     if (!this.modelLoader.currentModel) return;
     // Visbility Culling: Turning off visible=false skips frustum tests completely for those subtrees.
-    this.modelLoader.currentModel.traverse((child: any) => {
+    this.modelLoader.currentModel.traverse((child: _any) => {
       if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.nodeId) {
         child.visible = !hiddenIds.includes(child.userData.nodeId);
       }
@@ -258,7 +259,7 @@ export class ThreeEngine {
 
     // Reset to normal if no isolated nodes
     if (isolatedIds.length === 0) {
-      this.modelLoader.currentModel.traverse((child: any) => {
+      this.modelLoader.currentModel.traverse((child: _any) => {
         if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.originalMaterial) {
           child.material = child.userData.originalMaterial;
         }
@@ -267,7 +268,7 @@ export class ThreeEngine {
     }
 
     // Ghost non-isolated branches
-    this.modelLoader.currentModel.traverse((child: any) => {
+    this.modelLoader.currentModel.traverse((child: _any) => {
       if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {
         if (!child.userData.originalMaterial) {
           child.userData.originalMaterial = child.material;
@@ -315,7 +316,7 @@ export class ThreeEngine {
 
     this.modelLoader.dispose();
 
-    this.scene.traverse((object: any) => {
+    this.scene.traverse((object: _any) => {
       if (!object.isMesh) return;
       const mesh = object as THREE.Mesh;
       mesh.geometry.dispose();

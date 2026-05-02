@@ -2,20 +2,31 @@ import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Logger } from 
 import { InternalWebhookGuard } from '@/core/guards/internal-webhook.guard';
 import { CadModelsService } from '@/modules/cad-models/cad-models.service';
 
+interface CallbackDto {
+  modelId: string;
+  status: string;
+  durationMs?: number;
+  processingLogs?: string[];
+  processedStorageKey?: string;
+  metadata?: Record<string, unknown>;
+  assemblyTree?: Record<string, unknown>;
+  thumbnailKey?: string;
+}
+
 @Controller('internal/callbacks')
 @UseGuards(InternalWebhookGuard)
 export class CadProcessingController {
   private readonly logger = new Logger(CadProcessingController.name);
 
-  constructor(private readonly cadModelsService: CadModelsService) {}
+  constructor(private readonly _cadModelsService: CadModelsService) {}
 
   @Post('cad-processing')
   @HttpCode(HttpStatus.OK)
-  async handleCallback(@Body() dto: any) {
+  async handleCallback(@Body() dto: CallbackDto) {
     this.logger.log(`Received callback for ${dto.modelId}: ${dto.status}`);
     
     // Idempotency: Prevent duplicate updates
-    const existing = await this.cadModelsService.getModelForCallback(dto.modelId);
+    const existing = await this._cadModelsService.getModelForCallback(dto.modelId);
     if (!existing) return { received: false, error: 'Model not found' };
     
     if (existing.status === 'COMPLETED' || existing.status === 'FAILED') {
@@ -23,7 +34,7 @@ export class CadProcessingController {
       return { received: true, ignored: true };
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: dto.status,
       processingCompletedAt: new Date(),
       processingDurationMs: dto.durationMs,
@@ -37,7 +48,8 @@ export class CadProcessingController {
       updateData.thumbnailKey = dto.thumbnailKey;
     }
 
-    await this.cadModelsService.updateStatus(dto.modelId, updateData);
+    await this._cadModelsService.updateStatus(dto.modelId, updateData);
     return { received: true };
   }
 }
+

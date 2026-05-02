@@ -1,6 +1,7 @@
 import React from 'react';
+import { StreamingMetrics } from '@/types/viewer';
 
-export function StreamingDiagnostics({ metrics }: { metrics: any }) {
+export function StreamingDiagnostics({ metrics }: { metrics: StreamingMetrics }) {
     if (!metrics) return null;
 
     return (

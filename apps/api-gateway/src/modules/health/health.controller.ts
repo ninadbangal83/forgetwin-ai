@@ -6,29 +6,31 @@ import { Client } from 'minio';
 @Controller('health')
 export class HealthController extends HealthIndicator {
   constructor(
-    private health: HealthCheckService,
-    private prismaHealth: PrismaHealthIndicator,
-    private prisma: PrismaService,
-    @Inject('MINIO_CLIENT') private minioClient: Client,
+    private _health: HealthCheckService,
+    private _prismaHealth: PrismaHealthIndicator,
+    private _prisma: PrismaService,
+    @Inject('MINIO_CLIENT') private _minioClient: Client,
   ) {
     super();
   }
 
   async checkMinio(): Promise<HealthIndicatorResult> {
     try {
-      await this.minioClient.listBuckets();
+      await this._minioClient.listBuckets();
       return this.getStatus('minio', true);
-    } catch (e: any) {
-      throw new HealthCheckError('MinIO check failed', this.getStatus('minio', false, { message: e.message }));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new HealthCheckError('MinIO check failed', this.getStatus('minio', false, { message: msg }));
     }
   }
 
   @Get()
   @HealthCheck()
   check() {
-    return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma),
+    return this._health.check([
+      () => this._prismaHealth.pingCheck('database', this._prisma),
       () => this.checkMinio(),
     ]);
   }
 }
+

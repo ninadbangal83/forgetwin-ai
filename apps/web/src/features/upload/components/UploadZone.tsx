@@ -46,8 +46,9 @@ export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
       setSuccess(true);
       setFile(null);
       if (onSuccess) onSuccess();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
     } finally {
       setUploading(false);
     }

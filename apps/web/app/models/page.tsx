@@ -1,11 +1,22 @@
 'use client';
+interface ModelData {
+  id: string;
+  name: string;
+  status: string;
+  fileSize: number;
+  createdAt: string;
+  thumbnailUrl?: string;
+  assemblyTree?: unknown;
+  metadata?: Record<string, unknown>;
+}
+type _any = unknown & { [key: string]: unknown };
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { UploadZone } from '@/features/upload/components/UploadZone';
 
 export default function GalleryPage() {
-  const [models, setModels] = useState<any[]>([]);
+  const [models, setModels] = useState<ModelData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchModels = async () => {
@@ -25,7 +36,7 @@ export default function GalleryPage() {
   }, []);
 
   useEffect(() => {
-    let intervalId: any;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const hasProcessing = models.some(m => m.status === 'PROCESSING' || m.status === 'PENDING' || m.status === 'UPLOADED');
 
     if (hasProcessing) {
@@ -65,7 +76,7 @@ export default function GalleryPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {models.map((model: any) => {
+          {models.map((model: ModelData) => {
             const isStuck = (model.status === 'PROCESSING' || model.status === 'PENDING' || model.status === 'UPLOADED') &&
               Date.now() - new Date(model.createdAt).getTime() > 5 * 60 * 1000;
 

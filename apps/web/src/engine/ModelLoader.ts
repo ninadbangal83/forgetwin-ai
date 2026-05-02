@@ -1,20 +1,23 @@
+import { _any } from '@/types/viewer';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ChunkManager, StreamingManifest } from './streaming/ChunkManager';
+import { ClippingManager } from './tools/ClippingManager';
+import { ExplodeManager } from './tools/ExplodeManager';
 
 export class ModelLoader {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private controls: OrbitControls;
-  private clippingManager: any;
-  private explodeManager: any;
+  private clippingManager?: ClippingManager;
+  private explodeManager?: ExplodeManager;
   
   // Streaming Subsystem
   public chunkManager: ChunkManager;
-  public onStreamingMetrics?: (metrics: any) => void;
+  public onStreamingMetrics?: (_metrics: _any) => void;
   private lastBox: THREE.Box3 | null = null;
 
-  constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, controls: OrbitControls, clipping?: any, explode?: any) {
+  constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, controls: OrbitControls, clipping?: ClippingManager, explode?: ExplodeManager) {
     this.scene = scene;
     this.camera = camera;
     this.controls = controls;
@@ -31,12 +34,19 @@ export class ModelLoader {
     this.chunkManager.onChunkLoaded = (group) => {
         group.updateMatrixWorld(true);
 
-        group.traverse((child: any) => {
-            if (child.isMesh) {
-                child.userData.nodeId = child.name;
-                child.frustumCulled = true; 
-                if (child.geometry.computeBoundsTree) child.geometry.computeBoundsTree();
-                if (this.clippingManager) this.clippingManager.applyToMaterial(child.material);
+        group.traverse((child) => {
+            const mesh = child as THREE.Mesh & { geometry: { computeBoundsTree?: () => void } };
+            if (mesh.isMesh) {
+                mesh.userData.nodeId = mesh.name;
+                mesh.frustumCulled = true; 
+                if (mesh.geometry && mesh.geometry.computeBoundsTree) mesh.geometry.computeBoundsTree();
+                if (this.clippingManager && mesh.material) {
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach((mat) => this.clippingManager!.applyToMaterial(mat));
+                    } else {
+                        this.clippingManager.applyToMaterial(mesh.material);
+                    }
+                }
             }
         });
 
@@ -53,7 +63,7 @@ export class ModelLoader {
       return this.chunkManager.getRootGroup();
   }
 
-  public async loadFromManifest(manifestUrl: string, onProgress?: (progress: number) => void): Promise<void> {
+  public async loadFromManifest(manifestUrl: string, onProgress?: (_progress: number) => void): Promise<void> {
     try {
         if (onProgress) onProgress(10);
         
@@ -101,29 +111,30 @@ export class ModelLoader {
   }
 
   private optimizeToInstancedMeshes(group: THREE.Group) {
-      const geometryMap = new Map<string, { geometry: THREE.BufferGeometry, material: THREE.Material, instances: { matrix: THREE.Matrix4, nodeId: string, mesh?: any }[] }>();
+      const geometryMap = new Map<string, { geometry: THREE.BufferGeometry, material: THREE.Material, instances: { matrix: THREE.Matrix4, nodeId: string, mesh?: THREE.Mesh }[] }>();
 
-      group.traverse((child: any) => {
-          if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {
-              if (!child.geometry.boundingSphere) child.geometry.computeBoundingSphere();
-              const posCount = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
-              const radius = child.geometry.boundingSphere ? child.geometry.boundingSphere.radius.toFixed(4) : '0';
+      group.traverse((child) => {
+          if (child instanceof THREE.Mesh && !(child instanceof THREE.InstancedMesh)) {
+              const mesh = child;
+              if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+              const posCount = mesh.geometry.attributes.position ? mesh.geometry.attributes.position.count : 0;
+              const radius = mesh.geometry.boundingSphere ? mesh.geometry.boundingSphere.radius.toFixed(4) : '0';
               const hash = `${posCount}_${radius}`;
               
-              if (!geometryMap.has(hash)) geometryMap.set(hash, { geometry: child.geometry, material: child.material, instances: [] });
+              if (!geometryMap.has(hash)) geometryMap.set(hash, { geometry: mesh.geometry, material: mesh.material as THREE.Material, instances: [] });
               
               const worldMatrix = new THREE.Matrix4();
-              child.updateWorldMatrix(true, false);
-              worldMatrix.copy(child.matrixWorld);
+              mesh.updateWorldMatrix(true, false);
+              worldMatrix.copy(mesh.matrixWorld);
               
-              geometryMap.get(hash)!.instances.push({ matrix: worldMatrix, nodeId: child.name, mesh: child });
+              geometryMap.get(hash)!.instances.push({ matrix: worldMatrix, nodeId: mesh.name, mesh: mesh });
           }
       });
 
-      geometryMap.forEach((data, hash) => {
+      geometryMap.forEach((data, _hash) => {
           if (data.instances.length > 5) {
               data.instances.forEach(inst => {
-                  if ((inst as any).mesh) (inst as any).mesh.visible = false;
+                  if (inst.mesh) inst.mesh.visible = false;
               });
               const instancedMesh = new THREE.InstancedMesh(data.geometry, data.material, data.instances.length);
               instancedMesh.userData.instanceNodeIds = [];
@@ -142,7 +153,7 @@ export class ModelLoader {
               group.add(instancedMesh);
           } else {
               data.instances.forEach(inst => {
-                  if ((inst as any).mesh) (inst as any).mesh.visible = true;
+                  if (inst.mesh) inst.mesh.visible = true;
               });
           }
       });

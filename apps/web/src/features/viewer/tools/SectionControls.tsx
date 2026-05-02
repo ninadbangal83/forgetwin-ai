@@ -5,7 +5,7 @@ import { toggleClipping, setClippingPlanes, toggleClippingInvert } from '@/store
 
 export function SectionControls() {
     const dispatch = useDispatch();
-    const { enabled, planes, invert } = useSelector((state: RootState) => state.viewerTools.clipping);
+    const { enabled, planes, invert } = useSelector((state: any) => state.viewerTools.clipping);
 
     return (
         <div className="absolute bottom-24 left-4 bg-slate-900/80 backdrop-blur-xl shadow-2xl border border-slate-800/80 rounded-2xl p-5 w-72 z-50 text-sm select-none">

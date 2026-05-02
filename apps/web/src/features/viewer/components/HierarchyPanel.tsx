@@ -8,9 +8,9 @@ import { flattenTree, FlattenedNode } from './hierarchyUtils';
 import { HierarchyRow } from './HierarchyRow';
 
 export function HierarchyPanel() {
-  const tree = useSelector((state: RootState) => state.viewer.assemblyTree);
-  const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
-  const hiddenNodeIds = useSelector((state: RootState) => state.viewer.hiddenNodeIds);
+  const tree = useSelector((state: any) => state.viewer.assemblyTree);
+  const selectedNodeId = useSelector((state: any) => state.viewer.selectedNodeId);
+  const hiddenNodeIds = useSelector((state: any) => state.viewer.hiddenNodeIds);
   
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 

@@ -7,9 +7,9 @@ import { tools } from './toolbarConstants';
 
 export const ToolControls: React.FC = () => {
     const dispatch = useDispatch();
-    const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
-    const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
-    const isolatedNodes = useSelector((state: RootState) => state.viewerTools.isolatedNodeIds);
+    const activeTool = useSelector((state: any) => state.viewerTools.activeTool);
+    const selectedNodeId = useSelector((state: any) => state.viewer.selectedNodeId);
+    const isolatedNodes = useSelector((state: any) => state.viewerTools.isolatedNodeIds);
 
     const handleIsolate = () => {
         if (isolatedNodes.length > 0) {

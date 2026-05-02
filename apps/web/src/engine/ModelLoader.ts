@@ -2,6 +2,7 @@ import { _any } from '@/types/viewer';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ChunkManager, StreamingManifest } from './streaming/ChunkManager';
+import axios from 'axios';
 import { ClippingManager } from './tools/ClippingManager';
 import { ExplodeManager } from './tools/ExplodeManager';
 
@@ -75,8 +76,8 @@ export class ModelLoader {
             return;
         }
 
-        const res = await fetch(manifestUrl);
-        const manifest: StreamingManifest = await res.json();
+        const res = await axios.get(manifestUrl);
+        const manifest: StreamingManifest = res.data;
         
         if (onProgress) onProgress(50);
 

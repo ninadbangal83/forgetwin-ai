@@ -26,7 +26,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
   const [modelData, setModelData] = useState<ModelData | null>(null);
   const [showHierarchy, setShowHierarchy] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
-  
+
   const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
             Assembly Hierarchy
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-black" />
           </div>
-          <button 
+          <button
             onClick={() => setShowHierarchy(!showHierarchy)}
             className={`p-3 text-sm font-black rounded-xl border flex items-center justify-center backdrop-blur-md transition-all duration-300 outline-none hover:scale-105 active:scale-95 select-none ${showHierarchy ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/60 hover:border-indigo-500/40 hover:text-white'}`}
           >
@@ -115,7 +115,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
             Engineering Properties
             <div className="absolute bottom-full right-4 border-[6px] border-transparent border-b-black" />
           </div>
-          <button 
+          <button
             onClick={() => setShowMetadata(!showMetadata)}
             className={`p-3 text-sm font-black rounded-xl border flex items-center justify-center backdrop-blur-md transition-all duration-300 outline-none hover:scale-105 active:scale-95 select-none ${showMetadata ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/60 hover:border-indigo-500/40 hover:text-white'}`}
           >
@@ -131,7 +131,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
       </div>
 
       <EngineeringToolbar />
-      
+
       {activeTool === 'clip' && <SectionControls />}
       {activeTool === 'measure' && <MeasurementPanel />}
       {activeTool === 'explode' && <ExplodeSlider />}

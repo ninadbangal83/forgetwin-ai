@@ -1,3 +1,5 @@
+import { apiClient } from '@/lib/apiClient';
+
 export interface ModelData {
   id: string;
   name: string;
@@ -12,10 +14,7 @@ export interface ModelData {
 }
 
 export async function fetchModelMetadata(modelId: string): Promise<ModelData> {
-  const res = await fetch(`http://localhost:3001/v1/cad-models/${modelId}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch metadata: ${res.statusText}`);
-  }
-  const raw = await res.json();
+  const response = await apiClient.get(`/cad-models/${modelId}`);
+  const raw = response.data;
   return raw.data || raw;
 }

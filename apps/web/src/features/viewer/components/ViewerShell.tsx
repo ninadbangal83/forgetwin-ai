@@ -19,12 +19,12 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
   const engineRef = useRef<ThreeEngine | null>(null);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<StreamingMetrics | null>(null);
-  
+
   const dispatch = useDispatch();
-  
+
   const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
   const hiddenNodeIds = useSelector((state: RootState) => state.viewer.hiddenNodeIds);
-  
+
   const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
   const explodeFactor = useSelector((state: RootState) => state.viewerTools.explodeFactor);
   const clipping = useSelector((state: RootState) => state.viewerTools.clipping);
@@ -38,7 +38,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
 
     // Trigger explicit window resize to correctly calculate size of 3D canvas
     const timer = setTimeout(() => {
-       window.dispatchEvent(new Event('resize'));
+      window.dispatchEvent(new Event('resize'));
     }, 100);
 
     engine.onNodeSelected = (nodeId) => {
@@ -47,16 +47,16 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
 
     engine.onMeasurementComplete = (distance, p1, p2) => {
       dispatch(addMeasurement({
-          id: Math.random().toString(36).substr(2, 9),
-          startPoint: p1 as [number, number, number],
-          endPoint: p2 as [number, number, number],
-          distance
+        id: Math.random().toString(36).substr(2, 9),
+        startPoint: p1 as [number, number, number],
+        endPoint: p2 as [number, number, number],
+        distance
       }));
     };
 
     // Hook into the Streaming Engine Metrics
     engine.modelLoader.onStreamingMetrics = (data) => {
-        setMetrics(data as unknown as StreamingMetrics);
+      setMetrics(data as unknown as StreamingMetrics);
     };
 
     const loadModel = async () => {
@@ -64,9 +64,9 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
         console.log(`[ViewerShell] Starting to load model with downloadUrl: ${downloadUrl}`);
         setLoading(true);
         if (downloadUrl) {
-            // Uses loadFromManifest instead of loadFromUrl internally for streaming
-            await engine.modelLoader.loadFromManifest(downloadUrl);
-            console.log(`[ViewerShell] Finished loadFromManifest successfully!`);
+          // Uses loadFromManifest instead of loadFromUrl internally for streaming
+          await engine.modelLoader.loadFromManifest(downloadUrl);
+          console.log(`[ViewerShell] Finished loadFromManifest successfully!`);
         }
         setLoading(false);
       } catch (err: unknown) {
@@ -126,8 +126,8 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
 
   useEffect(() => {
     if (engineRef.current) {
-        // Explode manager operates on the active chunk groups now
-        engineRef.current.explode.setExplodeFactor(explodeFactor, engineRef.current.modelLoader.currentModel);
+      // Explode manager operates on the active chunk groups now
+      engineRef.current.explode.setExplodeFactor(explodeFactor, engineRef.current.modelLoader.currentModel);
     }
   }, [explodeFactor]);
 
@@ -138,7 +138,7 @@ export function ViewerShell({ modelId, downloadUrl }: ViewerShellProps) {
   return (
     <div className="absolute inset-0 outline-none bg-slate-950 rounded shadow-inner">
       {metrics && <StreamingDiagnostics metrics={metrics} />}
-      
+
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 backdrop-blur-sm">
           <div className="w-12 h-12 border-4 border-slate-800 border-t-indigo-500 rounded-full animate-spin mb-4"></div>

@@ -5,7 +5,7 @@ import { clearMeasurements } from '@/store/viewerToolsSlice';
 
 export function MeasurementPanel() {
     const dispatch = useDispatch();
-    const measurements = useSelector((state: RootState) => state.viewerTools.measurements);
+    const measurements = useSelector((state: any) => state.viewerTools.measurements);
 
     return (
         <div className="absolute bottom-24 left-4 bg-slate-900/80 backdrop-blur-xl shadow-2xl border border-slate-800/80 rounded-2xl p-5 w-72 z-50 text-sm select-none">
@@ -18,7 +18,7 @@ export function MeasurementPanel() {
                 <div className="text-slate-500 italic text-xs py-4 text-center">Use the raycaster to pick two points on the solid body.</div>
             ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                    {measurements.map((m, i) => (
+                    {measurements.map((m: any, i: number) => (
                         <div key={m.id} className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 flex flex-col gap-1">
                             <div className="flex justify-between items-center">
                                 <span className="text-indigo-300 font-bold text-xs uppercase">Measure #{i+1}</span>

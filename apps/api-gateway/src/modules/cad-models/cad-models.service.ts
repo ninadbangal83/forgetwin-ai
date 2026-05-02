@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import { StorageService } from '@/infrastructure/storage/storage.service';
+import { CadModelsRepository } from './cad-models.repository';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,7 +11,7 @@ export class CadModelsService {
   private readonly logger = new Logger(CadModelsService.name);
 
   constructor(
-    private readonly _prisma: PrismaService,
+    private readonly _repository: CadModelsRepository,
     private readonly _storage: StorageService,
     @InjectQueue('cad-processing') private readonly _processingQueue: Queue,
   ) {}
@@ -25,18 +25,15 @@ export class CadModelsService {
     try {
       await this._storage.uploadFile('raw-cad', storageKey, file.buffer, file.size, file.mimetype || 'application/octet-stream');
 
-      const model = await this._prisma.cadModel.create({
-        data: {
-          id: modelId,
-          name: file.originalname.replace(ext, ''),
-          originalFilename: file.originalname,
-          storageKey,
-          fileSize: file.size,
-          mimeType: file.mimetype || 'application/octet-stream',
-          status: 'UPLOADED',
-          // @ts-ignore
-          correlationId,
-        },
+      const model = await this._repository.create({
+        id: modelId,
+        name: file.originalname.replace(ext, ''),
+        originalFilename: file.originalname,
+        storageKey,
+        fileSize: file.size,
+        mimeType: file.mimetype || 'application/octet-stream',
+        status: 'UPLOADED',
+        correlationId,
       });
 
       // Atomic workflow: immediately push to BullMQ after DB write
@@ -58,10 +55,7 @@ export class CadModelsService {
   }
 
   async findAll() {
-    const models = await this._prisma.cadModel.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true },
-    });
+    const models = await this._repository.findMany();
 
     const result = [];
     for (const model of models) {
@@ -78,7 +72,7 @@ export class CadModelsService {
   }
 
   async findOne(id: string) {
-    const model = await this._prisma.cadModel.findUnique({ where: { id } });
+    const model = await this._repository.findById(id);
     if (!model) throw new NotFoundException(`Model ${id} not found`);
 
     let downloadUrl = null;
@@ -101,11 +95,11 @@ export class CadModelsService {
   }
 
   async updateStatus(id: string, data: Record<string, unknown>) {
-    return this._prisma.cadModel.update({ where: { id }, data });
+    return this._repository.update(id, data);
   }
 
   async getModelForCallback(id: string) {
-    return this._prisma.cadModel.findUnique({ where: { id } });
+    return this._repository.findById(id);
   }
 
   async updateThumbnail(id: string, base64Data: string) {
@@ -119,7 +113,7 @@ export class CadModelsService {
       const buffer = Buffer.from(cleaned, 'base64');
       const key = `thumbnails/${id}.png`;
       await this._storage.uploadFile('processed-models', key, buffer, buffer.length, 'image/png');
-      return this._prisma.cadModel.update({ where: { id }, data: { thumbnailKey: key } });
+      return this._repository.update(id, { thumbnailKey: key });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.error(`Failed to update thumbnail for model ${id}: ${msg}`);

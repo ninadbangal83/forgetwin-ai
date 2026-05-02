@@ -14,7 +14,7 @@ RUN conda create -n cadenv -c conda-forge python=3.10 pythonocc-core fastapi uvi
 SHELL ["conda", "run", "-n", "cadenv", "/bin/bash", "-c"]
 
 # Copy Python processing application
-COPY main.py .
+COPY . .
 
 # Expose FastAPI port
 EXPOSE 8000

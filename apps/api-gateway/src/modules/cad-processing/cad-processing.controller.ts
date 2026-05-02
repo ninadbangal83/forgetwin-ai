@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Logger } from '@nestjs/common';
 import { InternalWebhookGuard } from '@/core/guards/internal-webhook.guard';
-import { CadModelsService } from '@/modules/cad-models/cad-models.service';
+import { CadModelsService } from '@/modules/cad-models/services/cad-models.service';
 
 interface CallbackDto {
   modelId: string;
@@ -52,4 +52,3 @@ export class CadProcessingController {
     return { received: true };
   }
 }
-

@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { CadModelsService } from '@/modules/cad-models/cad-models.service';
+import { CadModelsService } from '@/modules/cad-models/services/cad-models.service';
 
 interface JobData {
   modelId: string;

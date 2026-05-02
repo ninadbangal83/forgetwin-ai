@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-
 import { TreeNode } from '@/types/viewer';
+import { findNode } from './hierarchyUtils';
 
 interface MetadataPanelProps {
   globalMetadata: Record<string, unknown> | null;
@@ -11,19 +11,6 @@ interface MetadataPanelProps {
 export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
   const tree = useSelector((state: RootState) => state.viewer.assemblyTree);
   const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
-
-  // Helper to find node in tree
-  const findNode = (node: TreeNode | null | undefined, id: string): TreeNode | null => {
-    if (!node) return null;
-    if (node.id === id) return node;
-    if (node.children) {
-      for (const child of node.children) {
-        const found = findNode(child, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
 
   const selectedNode = selectedNodeId ? findNode(tree as TreeNode | null, selectedNodeId) : null;
 
@@ -35,7 +22,6 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Core Identity */}
           <div>
             <h3 className="font-extrabold text-slate-500 text-[10px] uppercase tracking-widest mb-2 border-b border-slate-800/80 pb-1">Identification</h3>
             <div className="grid grid-cols-1 gap-2 text-xs">
@@ -54,7 +40,6 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
             </div>
           </div>
 
-          {/* Physical Properties (if available from Python extraction) */}
           {selectedNode.metrics && (
             <div>
               <h3 className="font-extrabold text-slate-500 text-[10px] uppercase tracking-widest mb-2 border-b border-slate-800/80 pb-1">Physical Metrics</h3>
@@ -82,7 +67,6 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
         </div>
       )}
 
-      {/* Global Metadata always shows at the bottom */}
       <div className="mt-auto pt-6">
         <h3 className="font-extrabold text-slate-500 text-[10px] uppercase tracking-widest mb-2 border-b border-slate-800/80 pb-1">Global CAD Document</h3>
         <div className="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-xl border border-slate-800/60">

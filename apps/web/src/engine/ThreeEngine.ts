@@ -125,7 +125,7 @@ export class ThreeEngine {
       if (!this.modelLoader.currentModel) return;
       this.raycaster.setFromCamera(this.mouse, this.camera);
       const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(
-        i => i.object.visible && (i.object as _any).material !== this.isolateMaterial
+        i => i.object.visible && (i.object as unknown as THREE.Mesh).material !== this.isolateMaterial
       );
       if (intersects.length > 0) {
         const hitPoint = intersects[0].point;
@@ -200,7 +200,7 @@ export class ThreeEngine {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
     // Ignore invisible/ghosted objects during raycasting interaction
-    const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(i => i.object.visible && (i.object as _any).material !== this.isolateMaterial);
+    const intersects = this.raycaster.intersectObject(this.modelLoader.currentModel, true).filter(i => i.object.visible && (i.object as unknown as THREE.Mesh).material !== this.isolateMaterial);
 
     if (intersects.length > 0) {
       if (this.activeTool === 'measure') {
@@ -234,12 +234,13 @@ export class ThreeEngine {
       this.originalMaterial = null;
     }
     if (!nodeId || !this.modelLoader.currentModel) return;
-    this.modelLoader.currentModel.traverse((child: _any) => {
-      if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.nodeId === nodeId) {
-        this.selectedMesh = child;
-        this.originalMaterial = child.material;
-        child.material = this.highlightMaterial;
-        this.clipping.applyToMaterial(child.material);
+    this.modelLoader.currentModel.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh && !(mesh instanceof THREE.InstancedMesh) && mesh.userData.nodeId === nodeId) {
+        this.selectedMesh = mesh;
+        this.originalMaterial = mesh.material as THREE.Material;
+        mesh.material = this.highlightMaterial;
+        this.clipping.applyToMaterial(mesh.material);
       }
     });
   }
@@ -247,9 +248,10 @@ export class ThreeEngine {
   public setHiddenNodes(hiddenIds: string[]) {
     if (!this.modelLoader.currentModel) return;
     // Visbility Culling: Turning off visible=false skips frustum tests completely for those subtrees.
-    this.modelLoader.currentModel.traverse((child: _any) => {
-      if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.nodeId) {
-        child.visible = !hiddenIds.includes(child.userData.nodeId);
+    this.modelLoader.currentModel.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh && !(mesh instanceof THREE.InstancedMesh) && mesh.userData.nodeId) {
+        mesh.visible = !hiddenIds.includes(mesh.userData.nodeId as string);
       }
     });
   }
@@ -259,26 +261,28 @@ export class ThreeEngine {
 
     // Reset to normal if no isolated nodes
     if (isolatedIds.length === 0) {
-      this.modelLoader.currentModel.traverse((child: _any) => {
-        if (child.isMesh && !(child instanceof THREE.InstancedMesh) && child.userData.originalMaterial) {
-          child.material = child.userData.originalMaterial;
+      this.modelLoader.currentModel.traverse((child: THREE.Object3D) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh && !(mesh instanceof THREE.InstancedMesh) && mesh.userData.originalMaterial) {
+          mesh.material = mesh.userData.originalMaterial as THREE.Material;
         }
       });
       return;
     }
 
     // Ghost non-isolated branches
-    this.modelLoader.currentModel.traverse((child: _any) => {
-      if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {
-        if (!child.userData.originalMaterial) {
-          child.userData.originalMaterial = child.material;
+    this.modelLoader.currentModel.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh && !(mesh instanceof THREE.InstancedMesh)) {
+        if (!mesh.userData.originalMaterial) {
+          mesh.userData.originalMaterial = mesh.material;
         }
-        if (isolatedIds.includes(child.userData.nodeId)) {
-          child.material = child.userData.originalMaterial;
+        if (isolatedIds.includes(mesh.userData.nodeId as string)) {
+          mesh.material = mesh.userData.originalMaterial as THREE.Material;
         } else {
-          child.material = this.isolateMaterial;
+          mesh.material = this.isolateMaterial;
         }
-        this.clipping.applyToMaterial(child.material);
+        this.clipping.applyToMaterial(mesh.material);
       }
     });
   }
@@ -316,9 +320,9 @@ export class ThreeEngine {
 
     this.modelLoader.dispose();
 
-    this.scene.traverse((object: _any) => {
-      if (!object.isMesh) return;
+    this.scene.traverse((object: THREE.Object3D) => {
       const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
       mesh.geometry.dispose();
       if (mesh.material instanceof THREE.Material) mesh.material.dispose();
       else if (Array.isArray(mesh.material)) mesh.material.forEach(mat => mat.dispose());

@@ -89,3 +89,17 @@ graph TD
 * **Heavy Scale Workloads**: Processing large assemblies (millions of triangles or tens of thousands of sub-assemblies).
 * **High Performance & Optimization**: Fine-grained control over memory management and computational performance.
 * **High Production Load**: Needs strong queue durability (Celery, Kafka, SQS) and zero data loss on service reboots.
+
+---
+
+## 7. Packaging as an Executable (.exe) vs. Containers
+
+Converting the Python-based CAD processor into a standalone executable can be highly beneficial or unnecessary depending on your target deployment environment.
+
+### **When Making an `.exe` is Best:**
+* **On-Premises / Desktop Distributions**: Simplifies setup for Windows environments where users do not have Python installed.
+* **Stand-alone Deployment**: Packages all native C++ OpenCASCADE DLLs and wrappers into a single executable using tools like PyInstaller or Nuitka.
+
+### **When Using Containers (Docker) is Best:**
+* **Cloud Infrastructure**: Scalable environments like Kubernetes or AWS ECS rely on containers to manage runtime dependencies effortlessly.
+* **Avoid Complex DLL Compilation**: Native binaries and dependencies link cleanly inside localized containers, avoiding extraction issues during software startup.

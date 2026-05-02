@@ -9,8 +9,8 @@ interface MetadataPanelProps {
 }
 
 export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
-  const tree = useSelector((state: any) => state.viewer.assemblyTree);
-  const selectedNodeId = useSelector((state: any) => state.viewer.selectedNodeId);
+  const tree = useSelector((state: RootState) => state.viewer.assemblyTree);
+  const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
 
   const selectedNode = selectedNodeId ? findNode(tree as TreeNode | null, selectedNodeId) : null;
 

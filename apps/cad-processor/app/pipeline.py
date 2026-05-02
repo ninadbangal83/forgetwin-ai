@@ -66,6 +66,11 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
                 assembly_tree["children"].append(child_node)
         
         logs.append(f"Found {len(unique_shapes)} unique shapes, {len(instances)} physical instances.")
+        print(f"--- Extraction Successful ---")
+        print(f"Assembly tree name: {assembly_tree['name']}")
+        print(f"Assembly tree children count: {len(assembly_tree['children'])}")
+        print(f"Unique shapes count: {len(unique_shapes)}")
+        print(f"Physical instances count: {len(instances)}")
         
         unique_geometries = generate_lod_meshes(unique_shapes, logs)
         root_min, root_max, chunks_metadata = calculate_bounds_and_chunk(instances, unique_geometries, logs)

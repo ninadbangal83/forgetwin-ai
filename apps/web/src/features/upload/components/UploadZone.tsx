@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { uploadModel } from '../services/uploadService';
 
 export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
   const [file, setFile] = useState<File | null>(null);
@@ -28,19 +29,8 @@ export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
     setError(null);
     setProgress(20);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const response = await fetch('http://localhost:3001/v1/cad-models/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || 'Upload failed');
-      }
+      await uploadModel(file);
 
       setProgress(100);
       setSuccess(true);

@@ -12,7 +12,7 @@ import { SectionControls } from '../tools/SectionControls';
 import { MeasurementPanel } from '../tools/MeasurementPanel';
 import { ExplodeSlider } from '../tools/ExplodeSlider';
 
-import { ModelData } from '@/types/viewer';
+import { fetchModelMetadata, ModelData } from '../services/viewerService';
 
 interface ViewerLayoutProps {
   modelId: string;
@@ -32,9 +32,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
     const fetchMetadata = async () => {
       try {
         console.log(`[ViewerLayout] Fetching metadata for model: ${modelId}`);
-        const res = await fetch(`http://localhost:3001/v1/cad-models/${modelId}`, { cache: 'no-store' });
-        const raw = await res.json();
-        const data = raw.data || raw;
+        const data = await fetchModelMetadata(modelId);
         console.log(`[ViewerLayout] Loaded metadata payload:`, data);
         setModelData(data);
         if (data.assemblyTree) {
@@ -56,9 +54,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
     // Start a 2 second polling timer while model is in transient state
     intervalId = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:3001/v1/cad-models/${modelId}`, { cache: 'no-store' });
-        const raw = await res.json();
-        const data = raw.data || raw;
+        const data = await fetchModelMetadata(modelId);
         setModelData(data);
         if (data.status === 'COMPLETED' || data.status === 'FAILED') {
           if (intervalId) clearInterval(intervalId);

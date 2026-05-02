@@ -1,75 +1,24 @@
 import os
 import time
-import io
+import json
 import tempfile
 import uuid
-import json
-import requests
-import trimesh
 import numpy as np
+import trimesh
 
-from app.config import config
 from app.services.storage import storage_service
-from app.services.geometry import (
-    HAS_OCC, get_label_name, gp_trsf_to_numpy, extract_mesh_from_shape
-)
+from app.services.geometry import HAS_OCC, extract_mesh_from_shape
+from app.services.tree_builder import build_assembly_tree
+from app.services.mock_processor import run_mock_processing
+from app.services.callback import send_callback
 
 if HAS_OCC:
     from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
     from OCC.Core.TDocStd import TDocStd_Document
     from OCC.Core.XCAFDoc import XCAFDoc_DocumentTool
     from OCC.Core.XCAFApp import XCAFApp_Application
-    from OCC.Core.TDF import TDF_Label, TDF_LabelSequence
+    from OCC.Core.TDF import TDF_LabelSequence
     from OCC.Core.IFSelect import IFSelect_RetDone
-
-
-def build_assembly_tree(shape_tool, label, parent_transform=np.eye(4), unique_shapes=None, instances=None):
-    if unique_shapes is None: unique_shapes = {}
-    if instances is None: instances = []
-
-    node_id = str(uuid.uuid4())
-    name = get_label_name(label)
-    
-    loc = shape_tool.GetLocation(label)
-    local_trsf = gp_trsf_to_numpy(loc.Transformation()) if not loc.IsIdentity() else np.eye(4)
-    world_transform = np.dot(parent_transform, local_trsf)
-    center = [float(world_transform[0][3]), float(world_transform[1][3]), float(world_transform[2][3])]
-    
-    node_data = {
-        "id": node_id, "name": name, "children": [], "metrics": {},
-        "type": "Part" if shape_tool.IsSimpleShape(label) else "Assembly"
-    }
-
-    if shape_tool.IsAssembly(label):
-        components = TDF_LabelSequence()
-        shape_tool.GetComponents(label, components)
-        for i in range(1, components.Length() + 1):
-            comp_label = components.Value(i)
-            ref_label = TDF_Label()
-            if shape_tool.GetReferredShape(comp_label, ref_label):
-                comp_loc = shape_tool.GetLocation(comp_label)
-                comp_trsf = gp_trsf_to_numpy(comp_loc.Transformation()) if not comp_loc.IsIdentity() else np.eye(4)
-                child_node = build_assembly_tree(shape_tool, ref_label, np.dot(world_transform, comp_trsf), unique_shapes, instances)
-                node_data["children"].append(child_node)
-                
-    elif shape_tool.IsSimpleShape(label):
-        shape = shape_tool.GetShape(label)
-        try:
-            shape_hash = hash(shape)
-        except Exception:
-            shape_hash = id(shape)
-        
-        if shape_hash not in unique_shapes:
-            unique_shapes[shape_hash] = shape
-                
-        instances.append({
-            "hash": shape_hash,
-            "node_id": node_id,
-            "transform": world_transform,
-            "center": center
-        })
-
-    return node_data
 
 
 def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
@@ -84,44 +33,8 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
         storage_service.download_file("raw-cad", storageKey, temp_step_path)
         
         if not HAS_OCC:
-            logs.append("FALLBACK: OCC missing. Generating mock 3D geometry instead.")
-            mesh = trimesh.creation.box(extents=[10, 10, 10])
-            assembly_tree = {
-                "id": str(uuid.uuid4()), "name": "Fallback Box", "children": [], "metrics": {}, "type": "Part"
-            }
-            chunks_metadata = [{
-                "id": "chunk_000",
-                "bounds": [[-10.0, -10.0, -10.0], [10.0, 10.0, 10.0]],
-                "instances": 1
-            }]
-            for lod_name in ["LOD0", "LOD1", "LOD2"]:
-                scene = trimesh.Scene()
-                scene.add_geometry(mesh, node_name="fallback_geom", geom_name="fallback_geom")
-                glb_bytes = scene.export(file_type='glb')
-                key = f"processed/{modelId}/chunk_000_{lod_name}.glb"
-                storage_service.upload_file("processed-models", key, glb_bytes, content_type="model/gltf-binary")
-
-            manifest = {
-                "modelId": modelId,
-                "rootBounds": [[-10, -10, -10], [10, 10, 10]],
-                "chunks": chunks_metadata,
-                "format": "ForgetwinStreaming.v1"
-            }
-            manifest_bytes = json.dumps(manifest).encode('utf-8')
-            manifest_key = f"processed/{modelId}/manifest.json"
-            storage_service.upload_file("processed-models", manifest_key, manifest_bytes, content_type="application/json")
-
-            payload = {
-                "modelId": modelId,
-                "status": "COMPLETED",
-                "durationMs": int((time.time() - start_time) * 1000),
-                "processedStorageKey": manifest_key,
-                "metadata": {"chunks": 1, "totalInstances": 1, "lodLevels": 3},
-                "assemblyTree": assembly_tree,
-                "processingLogs": logs
-            }
-            headers = {"Authorization": f"Bearer {config.INTERNAL_WEBHOOK_SECRET}", "Content-Type": "application/json"}
-            requests.post(f"{config.API_GATEWAY_URL}/v1/internal/callbacks/cad-processing", json=payload, headers=headers)
+            payload = run_mock_processing(modelId, correlationId, start_time, logs)
+            send_callback(payload)
             return
 
         app = XCAFApp_Application.GetApplication()
@@ -154,13 +67,11 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
         logs.append(f"Found {len(unique_shapes)} unique shapes, {len(instances)} physical instances.")
         
         logs.append("Generating LOD meshes (LOD0, LOD1, LOD2)...")
-        # Deflections: 0.05 (High), 0.5 (Medium), 5.0 (Low)
         lod_profiles = [("LOD0", 0.05), ("LOD1", 0.5), ("LOD2", 5.0)]
-        unique_geometries = {} # hash -> {LOD0: mesh, LOD1: mesh, LOD2: mesh}
+        unique_geometries = {}
         
         for shape_hash, shape in unique_shapes.items():
             unique_geometries[shape_hash] = {}
-            # Generate a consistent random color for this shape
             color = np.random.randint(100, 200, size=4)
             color[3] = 255
             
@@ -171,10 +82,9 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
                     unique_geometries[shape_hash][lod_name] = mesh
         
         logs.append("Spatial Partitioning (Chunking)...")
-        # Simple spatial sort along X axis (simulating a BVH node split for massive assemblies)
         instances.sort(key=lambda x: x["center"][0])
         
-        CHUNK_SIZE = 200 # max parts per chunk
+        CHUNK_SIZE = 200
         chunks_metadata = []
         
         all_min = []
@@ -221,7 +131,6 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
                 "instances": len(chunk_instances)
             })
             
-            # Export the 3 LOD files for this chunk
             for lod_name, _ in lod_profiles:
                 scene = trimesh.Scene()
                 for inst in chunk_instances:
@@ -248,34 +157,26 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
         manifest_key = f"processed/{modelId}/manifest.json"
         storage_service.upload_file("processed-models", manifest_key, manifest_bytes, content_type="application/json")
         
-        svg_key = None
-        duration_ms = (time.time() - start_time) * 1000
-        
         payload = {
             "modelId": modelId,
             "status": "COMPLETED",
-            "durationMs": int(duration_ms),
-            "processedStorageKey": manifest_key, # Tell frontend to load the manifest!
+            "durationMs": int((time.time() - start_time) * 1000),
+            "processedStorageKey": manifest_key,
             "metadata": {"chunks": len(chunks_metadata), "totalInstances": len(instances), "lodLevels": 3},
             "assemblyTree": assembly_tree,
-            "processingLogs": logs,
-            "thumbnailKey": svg_key
+            "processingLogs": logs
         }
-        
-        headers = {"Authorization": f"Bearer {config.INTERNAL_WEBHOOK_SECRET}", "Content-Type": "application/json"}
-        requests.post(f"{config.API_GATEWAY_URL}/v1/internal/callbacks/cad-processing", json=payload, headers=headers)
+        send_callback(payload)
         
     except Exception as e:
-        duration_ms = (time.time() - start_time) * 1000
         payload = {
             "modelId": modelId,
             "status": "FAILED",
-            "durationMs": int(duration_ms),
+            "durationMs": int((time.time() - start_time) * 1000),
             "errorMessage": str(e),
             "processingLogs": logs + [f"FAILED: {str(e)}"]
         }
-        headers = {"Authorization": f"Bearer {config.INTERNAL_WEBHOOK_SECRET}", "Content-Type": "application/json"}
-        requests.post(f"{config.API_GATEWAY_URL}/v1/internal/callbacks/cad-processing", json=payload, headers=headers)
+        send_callback(payload)
     finally:
         if temp_step_path and os.path.exists(temp_step_path):
             os.remove(temp_step_path)

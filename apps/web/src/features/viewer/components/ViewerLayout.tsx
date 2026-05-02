@@ -1,77 +1,36 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { ViewerShell } from './ViewerShell';
-import { HierarchyPanel } from './HierarchyPanel';
-import { MetadataPanel } from './MetadataPanel';
-import { ViewerLoadingScreen } from './ViewerLoadingScreen';
-import { ViewerProcessingScreen } from './ViewerProcessingScreen';
-import { ViewerErrorScreen } from './ViewerErrorScreen';
-import { useDispatch, useSelector } from 'react-redux';
-import { setAssemblyTree } from '@/store/viewerSlice';
+import React from 'react';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 
-import { EngineeringToolbar } from '../tools/EngineeringToolbar';
-import { SectionControls } from '../tools/SectionControls';
-import { MeasurementPanel } from '../tools/MeasurementPanel';
-import { ExplodeSlider } from '../tools/ExplodeSlider';
+import { ViewerShell } from '@/features/viewer/components/ViewerShell';
+import { HierarchyPanel } from '@/features/viewer/components/HierarchyPanel';
+import { MetadataPanel } from '@/features/viewer/components/MetadataPanel';
+import { ViewerLoadingScreen } from '@/features/viewer/components/ViewerLoadingScreen';
+import { ViewerProcessingScreen } from '@/features/viewer/components/ViewerProcessingScreen';
+import { ViewerErrorScreen } from '@/features/viewer/components/ViewerErrorScreen';
 
-import { fetchModelMetadata, ModelData } from '../services/viewerService';
+import { EngineeringToolbar } from '@/features/viewer/tools/EngineeringToolbar';
+import { SectionControls } from '@/features/viewer/tools/SectionControls';
+import { MeasurementPanel } from '@/features/viewer/tools/MeasurementPanel';
+import { ExplodeSlider } from '@/features/viewer/tools/ExplodeSlider';
+
+import { useViewerLayout } from '@/features/viewer/hooks/useViewerLayout';
 
 interface ViewerLayoutProps {
   modelId: string;
 }
 
 export function ViewerLayout({ modelId }: ViewerLayoutProps) {
-  const dispatch = useDispatch();
-  const [modelData, setModelData] = useState<ModelData | null>(null);
-  const [showHierarchy, setShowHierarchy] = useState<boolean>(false);
-  const [showMetadata, setShowMetadata] = useState<boolean>(false);
+  const {
+    modelData,
+    showHierarchy,
+    setShowHierarchy,
+    showMetadata,
+    setShowMetadata,
+  } = useViewerLayout(modelId);
 
   const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
-
-  useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-
-    const fetchMetadata = async () => {
-      try {
-        console.log(`[ViewerLayout] Fetching metadata for model: ${modelId}`);
-        const data = await fetchModelMetadata(modelId);
-        console.log(`[ViewerLayout] Loaded metadata payload:`, data);
-        setModelData(data);
-        if (data.assemblyTree) {
-          console.log(`[ViewerLayout] Setting assembly tree:`, data.assemblyTree);
-          dispatch(setAssemblyTree(data.assemblyTree));
-        }
-
-        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-          if (intervalId) clearInterval(intervalId);
-        }
-      } catch (err) {
-        console.error("[ViewerLayout] Failed to fetch model metadata", err);
-      }
-    };
-
-    fetchMetadata();
-
-    intervalId = setInterval(async () => {
-      try {
-        const data = await fetchModelMetadata(modelId);
-        setModelData(data);
-        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-          if (intervalId) clearInterval(intervalId);
-          if (data.assemblyTree) {
-            dispatch(setAssemblyTree(data.assemblyTree));
-          }
-        }
-      } catch (err) {
-        console.error("[ViewerLayout] Polling failed", err);
-      }
-    }, 2000);
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [modelId, dispatch]);
 
   if (!modelData) {
     return <ViewerLoadingScreen />;
@@ -162,3 +121,4 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
     </div>
   );
 }
+

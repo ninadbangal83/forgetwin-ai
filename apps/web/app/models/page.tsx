@@ -14,35 +14,34 @@ type _any = unknown & { [key: string]: unknown };
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { UploadZone } from '@/features/upload/components/UploadZone';
+import { fetchModels } from '@/features/viewer/services/viewerService';
+import { MODEL_STATUS, POLLING_INTERVAL, STUCK_TIMEOUT_THRESHOLD } from '@/constants/app';
 
 export default function GalleryPage() {
   const [models, setModels] = useState<ModelData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchModels = async () => {
+  const loadModels = async () => {
     try {
-      const res = await fetch('http://localhost:3001/v1/cad-models', { cache: 'no-store' });
-      if (res.ok) {
-         const raw = await res.json();
-         setModels(Array.isArray(raw) ? raw : (raw.data || []));
-      }
+      const data = await fetchModels();
+      setModels(data);
     } catch (err) {
       console.error("Failed to connect to API server", err);
     }
   };
 
   useEffect(() => {
-    fetchModels();
+    loadModels();
   }, []);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
-    const hasProcessing = models.some(m => m.status === 'PROCESSING' || m.status === 'PENDING' || m.status === 'UPLOADED');
+    const hasProcessing = models.some(m => m.status === MODEL_STATUS.PROCESSING || m.status === MODEL_STATUS.PENDING || m.status === MODEL_STATUS.UPLOADED);
 
     if (hasProcessing) {
       intervalId = setInterval(() => {
-        fetchModels();
-      }, 3000);
+        loadModels();
+      }, POLLING_INTERVAL);
     }
 
     return () => {
@@ -77,17 +76,17 @@ export default function GalleryPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {models.map((model: ModelData) => {
-            const isStuck = (model.status === 'PROCESSING' || model.status === 'PENDING' || model.status === 'UPLOADED') &&
-              Date.now() - new Date(model.createdAt).getTime() > 5 * 60 * 1000;
+            const isStuck = (model.status === MODEL_STATUS.PROCESSING || model.status === MODEL_STATUS.PENDING || model.status === MODEL_STATUS.UPLOADED) &&
+              Date.now() - new Date(model.createdAt).getTime() > STUCK_TIMEOUT_THRESHOLD;
 
             return (
               <Link href={`/models/${model.id}`} key={model.id} className="block group">
                 <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl overflow-hidden hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 relative h-full select-none">
                   <div className="h-52 bg-slate-950/60 flex items-center justify-center border-b border-slate-800/60 relative overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.08),transparent)] pointer-events-none" />
-                    {model.status === 'COMPLETED' ? (
+                    {model.status === MODEL_STATUS.COMPLETED ? (
                       <div className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: `url('${model.thumbnailUrl || '/cad_blueprint_mockup.png'}')` }} />
-                    ) : (model.status === 'FAILED' || isStuck) ? (
+                    ) : (model.status === MODEL_STATUS.FAILED || isStuck) ? (
                       <div className="flex flex-col items-center text-red-500">
                         <span className="text-5xl mb-2 drop-shadow-lg select-none">⚠️</span>
                         <span className="text-xs font-black tracking-widest uppercase">{isStuck ? 'Processing Timeout' : 'Processing Failed'}</span>
@@ -108,8 +107,8 @@ export default function GalleryPage() {
                         {model.fileSize ? (model.fileSize < 1048576 ? (model.fileSize / 1024).toFixed(2) + ' KB' : (model.fileSize / 1048576).toFixed(2) + ' MB') : '0 KB'}
                       </span>
                       <span className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide uppercase border ${
-                        model.status === 'COMPLETED' ? 'bg-teal-950/40 border-teal-800/40 text-teal-300' : 
-                        (model.status === 'FAILED' || isStuck) ? 'bg-red-950/40 border-red-800/40 text-red-400' : 'bg-indigo-950/40 border-indigo-800/40 text-indigo-400 animate-pulse'
+                        model.status === MODEL_STATUS.COMPLETED ? 'bg-teal-950/40 border-teal-800/40 text-teal-300' : 
+                        (model.status === MODEL_STATUS.FAILED || isStuck) ? 'bg-red-950/40 border-red-800/40 text-red-400' : 'bg-indigo-950/40 border-indigo-800/40 text-indigo-400 animate-pulse'
                       }`}>
                         {isStuck ? 'TIMED OUT' : model.status}
                       </span>
@@ -143,7 +142,7 @@ export default function GalleryPage() {
               <button 
                 onClick={() => {
                   setIsModalOpen(false);
-                  fetchModels();
+                  loadModels();
                 }} 
                 className="text-slate-500 hover:text-slate-300 transition-colors bg-slate-950/60 hover:bg-slate-800/60 border border-slate-800/60 p-2.5 rounded-xl text-xs font-bold px-3"
               >
@@ -154,7 +153,7 @@ export default function GalleryPage() {
             <div className="flex-1 py-2">
               <UploadZone onSuccess={() => {
                 // Instantly refresh model list when upload finishes successfully
-                fetchModels();
+                loadModels();
               }} />
             </div>
 

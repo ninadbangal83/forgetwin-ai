@@ -1,15 +1,7 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { setSelectedNodeId, toggleNodeVisibility } from '@/store/viewerSlice';
-import { FlattenedNode } from './hierarchyUtils';
-
-interface HierarchyRowProps {
-  index: number;
-  style: React.CSSProperties;
-  data: FlattenedNode[];
-  selectedNodeId: string | null;
-  onToggleExpand: (id: string, e: React.MouseEvent) => void;
-}
+import { FlattenedNode, HierarchyRowProps } from '@/types/viewer';
 
 export const HierarchyRow: React.FC<HierarchyRowProps> = ({
   index,

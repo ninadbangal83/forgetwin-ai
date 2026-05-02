@@ -1,31 +1,10 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { setActiveTool } from '@/store/viewerToolsSlice';
-import { NavigationControls } from './NavigationControls';
-import { ToolControls } from './ToolControls';
+import { NavigationControls } from '@/features/viewer/tools/NavigationControls';
+import { ToolControls } from '@/features/viewer/tools/ToolControls';
+import { useEngineeringToolbar } from '@/features/viewer/hooks/useEngineeringToolbar';
 
 export function EngineeringToolbar() {
-    const dispatch = useDispatch();
-    const [cameraMode, setCameraMode] = React.useState<'orbit' | 'pan' | 'walk' | 'zoom'>('orbit');
-
-    React.useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement) return;
-            if (e.key.toLowerCase() === 's') dispatch(setActiveTool('select'));
-            if (e.key.toLowerCase() === 'm') dispatch(setActiveTool('measure'));
-            if (e.key.toLowerCase() === 'c') dispatch(setActiveTool('clip'));
-            if (e.key.toLowerCase() === 'e') dispatch(setActiveTool('explode'));
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [dispatch]);
-
-    const triggerAction = (action: string) => {
-        window.dispatchEvent(new CustomEvent('viewer-camera-action', { detail: action }));
-        if (action === 'orbit' || action === 'pan' || action === 'walk' || action === 'zoom') {
-            setCameraMode(action as 'orbit' | 'pan' | 'walk' | 'zoom');
-        }
-    };
+    const { cameraMode, triggerAction } = useEngineeringToolbar();
 
     return (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-xl shadow-2xl border border-slate-800/80 rounded-2xl p-2 flex gap-2 z-50 select-none">
@@ -40,3 +19,4 @@ export function EngineeringToolbar() {
         </div>
     );
 }
+

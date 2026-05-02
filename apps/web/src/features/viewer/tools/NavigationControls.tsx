@@ -1,11 +1,7 @@
 import React from 'react';
-import { ToolbarButton } from './ToolbarButton';
-import { navControls } from './toolbarConstants';
-
-interface NavigationControlsProps {
-  cameraMode: 'orbit' | 'pan' | 'walk' | 'zoom';
-  onTriggerAction: (action: string) => void;
-}
+import { ToolbarButton } from '@/features/viewer/tools/ToolbarButton';
+import { navControls } from '@/features/viewer/tools/toolbarConstants';
+import { NavigationControlsProps } from '@/types/viewer';
 
 export const NavigationControls: React.FC<NavigationControlsProps> = ({
   cameraMode,

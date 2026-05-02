@@ -1,38 +1,23 @@
 'use client';
-import React, { useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React from 'react';
 import { List } from 'react-window';
-import { RootState } from '@/store/store';
-import { TreeNode } from '@/types/viewer';
-import { flattenTree, FlattenedNode } from './hierarchyUtils';
-import { HierarchyRow } from './HierarchyRow';
+import { FlattenedNode } from '@/types/viewer';
+import { HierarchyRow } from '@/features/viewer/components/HierarchyRow';
+import { useHierarchyState } from '@/features/viewer/hooks/useHierarchyState';
 
 export function HierarchyPanel() {
-  const tree = useSelector((state: any) => state.viewer.assemblyTree);
-  const selectedNodeId = useSelector((state: any) => state.viewer.selectedNodeId);
-  const hiddenNodeIds = useSelector((state: any) => state.viewer.hiddenNodeIds);
-  
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  const toggleExpand = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const flattenedData = useMemo(() => {
-    return flattenTree(tree as TreeNode, 0, hiddenNodeIds, expandedIds);
-  }, [tree, hiddenNodeIds, expandedIds]);
+  const {
+    tree,
+    selectedNodeId,
+    flattenedData,
+    toggleExpand,
+  } = useHierarchyState();
 
   if (!tree) {
     return <div className="text-slate-500 text-xs p-4 select-none">No assembly structure extracted.</div>;
   }
 
-  const RowWrapper = ({ index, style, data }: { index: number, style: React.CSSProperties, data: FlattenedNode[] }) => (
+  const RowWrapper = ({ index, style, data }: { index: number; style: React.CSSProperties; data: FlattenedNode[] }) => (
     <HierarchyRow
       index={index}
       style={style}
@@ -62,3 +47,6 @@ export function HierarchyPanel() {
     </div>
   );
 }
+
+
+

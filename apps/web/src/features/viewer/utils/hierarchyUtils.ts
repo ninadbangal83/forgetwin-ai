@@ -1,11 +1,4 @@
-import { TreeNode } from '@/types/viewer';
-
-export interface FlattenedNode extends TreeNode {
-  level: number;
-  isHidden: boolean;
-  isExpanded: boolean;
-  hasChildren: boolean;
-}
+import { TreeNode, FlattenedNode } from '@/types/viewer';
 
 export const flattenTree = (
   node: TreeNode | null | undefined,

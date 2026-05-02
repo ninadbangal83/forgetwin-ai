@@ -7,6 +7,7 @@ import { ClippingManager } from './tools/ClippingManager';
 import { ExplodeManager } from './tools/ExplodeManager';
 import { MeasurementManager } from './tools/MeasurementManager';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { VIEWER_COLORS, VIEWER_CAMERA, VIEWER_CONTROLS, VIEWER_LIGHTING } from '@/constants/viewer';
 
 // Inject BVH globally to massively accelerate raycasting on millions of polygons
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -54,9 +55,9 @@ export class ThreeEngine {
     container.appendChild(this.stats.dom);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x090d16);
+    this.scene.background = new THREE.Color(VIEWER_COLORS.BACKGROUND);
 
-    const gridHelper = new THREE.GridHelper(200, 50, 0x312e81, 0x1e1b4b);
+    const gridHelper = new THREE.GridHelper(200, 50, VIEWER_COLORS.GRID_MAJOR, VIEWER_COLORS.GRID_MINOR);
     gridHelper.position.y = -10;
     this.scene.add(gridHelper);
 
@@ -64,8 +65,8 @@ export class ThreeEngine {
     const height = container.clientHeight;
     console.log(`[ThreeEngine] Container dimensions measured: ${width}x${height}`);
 
-    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100000);
-    this.camera.position.set(50, 50, 50);
+    this.camera = new THREE.PerspectiveCamera(VIEWER_CAMERA.FOV, width / height, VIEWER_CAMERA.NEAR, VIEWER_CAMERA.FAR);
+    this.camera.position.set(VIEWER_CAMERA.DEFAULT_POS.x, VIEWER_CAMERA.DEFAULT_POS.y, VIEWER_CAMERA.DEFAULT_POS.z);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance", stencil: false, preserveDrawingBuffer: true });
     this.renderer.setSize(width, height);
@@ -76,19 +77,19 @@ export class ThreeEngine {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
+    this.controls.dampingFactor = VIEWER_CONTROLS.DAMPING_FACTOR;
     this.controls.screenSpacePanning = true;
-    this.controls.rotateSpeed = 1.0;
-    this.controls.panSpeed = 1.2;
-    this.controls.zoomSpeed = 1.5;
-    this.controls.minDistance = 1;
-    this.controls.maxDistance = 1000;
+    this.controls.rotateSpeed = VIEWER_CONTROLS.ROTATE_SPEED;
+    this.controls.panSpeed = VIEWER_CONTROLS.PAN_SPEED;
+    this.controls.zoomSpeed = VIEWER_CONTROLS.ZOOM_SPEED;
+    this.controls.minDistance = VIEWER_CONTROLS.MIN_DISTANCE;
+    this.controls.maxDistance = VIEWER_CONTROLS.MAX_DISTANCE;
     this.controls.maxPolarAngle = Math.PI - 0.01;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(VIEWER_COLORS.LIGHT_DEFAULT, VIEWER_LIGHTING.AMBIENT_INTENSITY);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const directionalLight = new THREE.DirectionalLight(VIEWER_COLORS.LIGHT_DEFAULT, VIEWER_LIGHTING.DIRECTIONAL_INTENSITY);
     directionalLight.position.set(100, 200, 100);
     this.scene.add(directionalLight);
 
@@ -104,13 +105,13 @@ export class ThreeEngine {
     this.mouse = new THREE.Vector2();
 
     this.highlightMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffaa00, emissive: 0x332200, roughness: 0.2, metalness: 0.8,
+      color: VIEWER_COLORS.HIGHLIGHT, emissive: VIEWER_COLORS.HIGHLIGHT_EMISSIVE, roughness: 0.2, metalness: 0.8,
       depthTest: false, transparent: true, opacity: 0.95
     });
 
     // Isolation "ghost" material
     this.isolateMaterial = new THREE.MeshStandardMaterial({
-      color: 0xcccccc, transparent: true, opacity: 0.1, depthWrite: false
+      color: VIEWER_COLORS.ISOLATE, transparent: true, opacity: 0.1, depthWrite: false
     });
 
     this.onMouseMove = (event: MouseEvent) => {

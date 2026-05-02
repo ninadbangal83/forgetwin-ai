@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
-import { StreamingService } from './streaming.service';
+import { StreamingService } from '@/modules/streaming/streaming.service';
 
 @Controller('streaming')
+
 export class StreamingController {
   constructor(private readonly _streamingService: StreamingService) {}
 

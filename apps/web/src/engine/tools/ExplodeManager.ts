@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EXPLODE } from '@/constants/viewer';
 
 export class ExplodeManager {
   private initialPositions = new Map<THREE.Object3D, THREE.Vector3>();
@@ -21,7 +22,7 @@ export class ExplodeManager {
     if (this.initialPositions.size === 0) return;
     
     // factor is 0 to 100. We map it to 0 to 20x multiplier
-    const multiplier = factor * 0.2;
+    const multiplier = factor * EXPLODE.MULTIPLIER;
 
     model.traverse((child: THREE.Object3D & { isMesh?: boolean }) => {
       if (child.isMesh && !(child instanceof THREE.InstancedMesh)) {

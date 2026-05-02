@@ -1,18 +1,9 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
-import { TreeNode } from '@/types/viewer';
-import { findNode } from './hierarchyUtils';
-
-interface MetadataPanelProps {
-  globalMetadata: Record<string, unknown> | null;
-}
+import { MetadataPanelProps } from '@/types/viewer';
+import { useMetadataState } from '@/features/viewer/hooks/useMetadataState';
 
 export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
-  const tree = useSelector((state: RootState) => state.viewer.assemblyTree);
-  const selectedNodeId = useSelector((state: RootState) => state.viewer.selectedNodeId);
-
-  const selectedNode = selectedNodeId ? findNode(tree as TreeNode | null, selectedNodeId) : null;
+  const { selectedNode } = useMetadataState();
 
   return (
     <div className="w-full h-full flex flex-col font-sans text-sm text-slate-200">
@@ -87,3 +78,4 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
     </div>
   );
 }
+

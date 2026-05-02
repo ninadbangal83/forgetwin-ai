@@ -1,7 +1,8 @@
 import { Controller, Post, Get, Param, Body, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CadModelsService } from '../services/cad-models.service';
+import { CadModelsService } from './cad-models.service';
 import { extname } from 'path';
+
 
 @Controller('cad-models')
 export class CadModelsController {

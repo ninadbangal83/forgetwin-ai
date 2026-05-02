@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MEASUREMENT } from '@/constants/viewer';
 
 export class MeasurementManager {
     private scene: THREE.Scene;
@@ -17,15 +18,15 @@ export class MeasurementManager {
 
         this.points.push(point.clone());
 
-        const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false });
+        const sphereGeo = new THREE.SphereGeometry(MEASUREMENT.SPHERE_RADIUS, MEASUREMENT.SPHERE_SEGMENTS, MEASUREMENT.SPHERE_SEGMENTS);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: MEASUREMENT.COLOR, depthTest: false });
         const sphere = new THREE.Mesh(sphereGeo, sphereMat);
         sphere.position.copy(point);
         this.scene.add(sphere);
         this.spheres.push(sphere);
 
         if (this.points.length === 2) {
-            const mat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 3, depthTest: false });
+            const mat = new THREE.LineBasicMaterial({ color: MEASUREMENT.COLOR, linewidth: MEASUREMENT.LINE_WIDTH, depthTest: false });
             const geo = new THREE.BufferGeometry().setFromPoints(this.points);
             this.line = new THREE.Line(geo, mat);
             this.scene.add(this.line);

@@ -1,15 +1,5 @@
 import React from 'react';
-
-export interface ToolbarButtonProps {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  isActive?: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-  activeClassName?: string;
-  className?: string;
-}
+import { ToolbarButtonProps } from '@/types/viewer';
 
 export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   id,

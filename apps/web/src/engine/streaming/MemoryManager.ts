@@ -1,5 +1,7 @@
+import { STREAMING } from '@/constants/viewer';
+
 export class MemoryManager {
-  public maxChunks = 50; // Maximum number of chunks allowed in GPU memory
+  public maxChunks = STREAMING.MAX_CHUNKS; // Maximum number of chunks allowed in GPU memory
   private chunkUsage: Map<string, number> = new Map();
 
   public markUsed(chunkId: string) {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CLIPPING } from '@/constants/viewer';
 
 export class ClippingManager {
   private renderer: THREE.WebGLRenderer;
@@ -22,32 +23,32 @@ export class ClippingManager {
     // Build solid, custom double-sided planes instead of wireframes with diagonal lines
     this.planeMeshes = [
       new THREE.Mesh(
-        new THREE.PlaneGeometry(120, 120),
+        new THREE.PlaneGeometry(CLIPPING.SIZE, CLIPPING.SIZE),
         new THREE.MeshBasicMaterial({
-          color: 0x6366f1, // Indigo
+          color: CLIPPING.COLORS.X, // Indigo
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.2,
+          opacity: CLIPPING.OPACITY,
           depthWrite: false
         })
       ),
       new THREE.Mesh(
-        new THREE.PlaneGeometry(120, 120),
+        new THREE.PlaneGeometry(CLIPPING.SIZE, CLIPPING.SIZE),
         new THREE.MeshBasicMaterial({
-          color: 0x14b8a6, // Teal
+          color: CLIPPING.COLORS.Y, // Teal
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.2,
+          opacity: CLIPPING.OPACITY,
           depthWrite: false
         })
       ),
       new THREE.Mesh(
-        new THREE.PlaneGeometry(120, 120),
+        new THREE.PlaneGeometry(CLIPPING.SIZE, CLIPPING.SIZE),
         new THREE.MeshBasicMaterial({
-          color: 0xec4899, // Rose
+          color: CLIPPING.COLORS.Z, // Rose
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.2,
+          opacity: CLIPPING.OPACITY,
           depthWrite: false
         })
       )

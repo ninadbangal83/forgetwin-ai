@@ -1,25 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type ToolType = 'select' | 'measure' | 'clip' | 'explode';
-
-interface Measurement {
-  id: string;
-  startPoint: [number, number, number];
-  endPoint: [number, number, number];
-  distance: number;
-}
-
-interface ViewerToolsState {
-  activeTool: ToolType;
-  explodeFactor: number;
-  clipping: {
-    enabled: boolean;
-    planes: { x: number; y: number; z: number };
-    invert: boolean;
-  };
-  measurements: Measurement[];
-  isolatedNodeIds: string[];
-}
+import { ToolType, Measurement, ViewerToolsState } from '@/types/viewer';
 
 const initialState: ViewerToolsState = {
   activeTool: 'select',

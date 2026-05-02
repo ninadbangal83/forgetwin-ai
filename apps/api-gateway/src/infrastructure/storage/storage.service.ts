@@ -1,19 +1,21 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { Client } from 'minio';
 
+const BUCKETS = ['raw-cad', 'processed-models', 'thumbnails'];
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
-  private readonly BUCKETS = ['raw-cad', 'processed-models', 'thumbnails'];
 
   constructor(@Inject('MINIO_CLIENT') private readonly _minioClient: Client) { }
+
 
   async onModuleInit() {
     await this.initializeBuckets();
   }
 
   private async initializeBuckets() {
-    for (const bucket of this.BUCKETS) {
+    for (const bucket of BUCKETS) {
       try {
         const exists = await this._minioClient.bucketExists(bucket);
         if (!exists) {

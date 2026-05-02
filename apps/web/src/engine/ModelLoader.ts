@@ -2,12 +2,12 @@ import { _any } from '@/types/viewer';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ChunkManager, StreamingManifest } from './streaming/ChunkManager';
-import axios from 'axios';
+import { apiClient } from '@/lib/apiClient';
 import { ClippingManager } from './tools/ClippingManager';
 import { ExplodeManager } from './tools/ExplodeManager';
+import { LOD_THRESHOLDS, CAMERA_FITTING } from '@/constants/viewer';
 
 export class ModelLoader {
-  private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private controls: OrbitControls;
   private clippingManager?: ClippingManager;
@@ -19,7 +19,6 @@ export class ModelLoader {
   private lastBox: THREE.Box3 | null = null;
 
   constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, controls: OrbitControls, clipping?: ClippingManager, explode?: ExplodeManager) {
-    this.scene = scene;
     this.camera = camera;
     this.controls = controls;
     this.clippingManager = clipping;
@@ -76,7 +75,7 @@ export class ModelLoader {
             return;
         }
 
-        const res = await axios.get(manifestUrl);
+        const res = await apiClient.get(manifestUrl);
         const manifest: StreamingManifest = res.data;
         
         if (onProgress) onProgress(50);
@@ -94,8 +93,8 @@ export class ModelLoader {
         
         // Dynamic LOD threshold scaling based on the model's dimensions
         const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z) || 1000;
-        this.chunkManager.setLODThresholds(maxDim * 0.8, maxDim * 2.5);
+        const maxDim = Math.max(size.x, size.y, size.z) || LOD_THRESHOLDS.DEFAULT_MAX_DIM;
+        this.chunkManager.setLODThresholds(maxDim * LOD_THRESHOLDS.NEAR_MULTIPLIER, maxDim * LOD_THRESHOLDS.FAR_MULTIPLIER);
 
         this.lastBox = box;
         this.fitCameraToBox(box);
@@ -166,13 +165,13 @@ export class ModelLoader {
     const maxDim = Math.max(size.x, size.y, size.z);
     
     // Dynamically adjust control pan and zoom speeds based on model's size
-    this.controls.panSpeed = Math.max(1.2, maxDim / 100);
-    this.controls.zoomSpeed = Math.max(1.5, maxDim / 50);
+    this.controls.panSpeed = Math.max(CAMERA_FITTING.MIN_PAN_SPEED, maxDim / CAMERA_FITTING.PAN_SPEED_DIVISOR);
+    this.controls.zoomSpeed = Math.max(CAMERA_FITTING.MIN_ZOOM_SPEED, maxDim / CAMERA_FITTING.ZOOM_SPEED_DIVISOR);
 
     const fov = this.camera.fov * (Math.PI / 180);
-    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * CAMERA_FITTING.CAMERA_Z_MULTIPLIER;
     
-    this.camera.position.set(center.x + cameraZ * 0.7, center.y + cameraZ * 0.7, center.z + cameraZ);
+    this.camera.position.set(center.x + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET, center.y + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET, center.z + cameraZ);
     this.camera.lookAt(center);
     this.controls.target.copy(center);
     this.controls.update();

@@ -1,48 +1,17 @@
 'use client';
-import React, { useState } from 'react';
-import { uploadModel } from '../services/uploadService';
+import React from 'react';
+import { useUpload } from '../hooks/useUpload';
 
 export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setError(null);
-      setSuccess(false);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-    
-    if (!file.name.toLowerCase().endsWith('.step') && !file.name.toLowerCase().endsWith('.stp')) {
-      setError('Only .step and .stp files are allowed.');
-      return;
-    }
-
-    setUploading(true);
-    setError(null);
-    setProgress(20);
-
-    try {
-      await uploadModel(file);
-
-      setProgress(100);
-      setSuccess(true);
-      setFile(null);
-      if (onSuccess) onSuccess();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-    } finally {
-      setUploading(false);
-    }
-  };
+  const {
+    file,
+    uploading,
+    progress,
+    error,
+    success,
+    handleFileChange,
+    handleUpload,
+  } = useUpload(onSuccess);
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-xl select-none">
@@ -73,3 +42,4 @@ export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
     </div>
   );
 }
+

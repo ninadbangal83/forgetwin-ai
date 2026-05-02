@@ -1,7 +1,8 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
-import { CadModelsService } from '@/modules/cad-models/services/cad-models.service';
+import { CadModelsService } from '@/modules/cad-models/cad-models.service';
 
 interface JobData {
   modelId: string;
@@ -13,7 +14,10 @@ interface JobData {
 export class CadProcessingProcessor extends WorkerHost {
   private readonly logger = new Logger(CadProcessingProcessor.name);
 
-  constructor(private readonly _cadModelsService: CadModelsService) {
+  constructor(
+    private readonly _cadModelsService: CadModelsService,
+    private readonly configService: ConfigService,
+  ) {
     super();
   }
 
@@ -27,7 +31,7 @@ export class CadProcessingProcessor extends WorkerHost {
     });
 
     try {
-      const pythonServiceUrl = process.env.CAD_PROCESSOR_URL || 'http://localhost:8000';
+      const pythonServiceUrl = this.configService.get<string>('CAD_PROCESSOR_URL') || 'http://localhost:8000';
       const response = await fetch(`${pythonServiceUrl}/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,4 +62,5 @@ export class CadProcessingProcessor extends WorkerHost {
     }
   }
 }
+
 

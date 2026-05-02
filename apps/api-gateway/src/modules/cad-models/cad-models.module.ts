@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { CadModelsController } from './controllers/cad-models.controller';
-import { CadModelsService } from './services/cad-models.service';
-import { CadModelsRepository } from './repositories/cad-models.repository';
+import { CadModelsController } from './cad-models.controller';
+import { CadModelsService } from './cad-models.service';
+import { CadModelsRepository } from './cad-models.repository';
+
 
 @Module({
   imports: [
@@ -15,3 +16,4 @@ import { CadModelsRepository } from './repositories/cad-models.repository';
   exports: [CadModelsService, CadModelsRepository],
 })
 export class CadModelsModule {}
+

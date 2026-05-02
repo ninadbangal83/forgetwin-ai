@@ -1,5 +1,6 @@
 import React from 'react';
 import { StreamingMetrics } from '@/types/viewer';
+import { STREAMING } from '@/constants/viewer';
 
 export function StreamingDiagnostics({ metrics }: { metrics: StreamingMetrics }) {
     if (!metrics) return null;
@@ -14,7 +15,7 @@ export function StreamingDiagnostics({ metrics }: { metrics: StreamingMetrics })
             <div className="space-y-1">
                 <div className="flex justify-between">
                     <span className="text-gray-400">Memory Budget:</span>
-                    <span className="font-bold text-yellow-400">{metrics.loaded} / 50 Chunks</span>
+                    <span className="font-bold text-yellow-400">{metrics.loaded} / {STREAMING.MAX_CHUNKS} Chunks</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-gray-400">Frustum Culling:</span>

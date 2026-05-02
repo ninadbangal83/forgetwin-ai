@@ -1,23 +1,16 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
-import { setActiveTool, setIsolatedNodes } from '@/store/viewerToolsSlice';
-import { ToolbarButton } from './ToolbarButton';
-import { tools } from './toolbarConstants';
+import { ToolbarButton } from '@/features/viewer/tools/ToolbarButton';
+import { tools } from '@/features/viewer/tools/toolbarConstants';
+import { useToolControlsState } from '@/features/viewer/hooks/useToolControlsState';
 
 export const ToolControls: React.FC = () => {
-    const dispatch = useDispatch();
-    const activeTool = useSelector((state: any) => state.viewerTools.activeTool);
-    const selectedNodeId = useSelector((state: any) => state.viewer.selectedNodeId);
-    const isolatedNodes = useSelector((state: any) => state.viewerTools.isolatedNodeIds);
-
-    const handleIsolate = () => {
-        if (isolatedNodes.length > 0) {
-            dispatch(setIsolatedNodes([])); 
-        } else if (selectedNodeId) {
-            dispatch(setIsolatedNodes([selectedNodeId]));
-        }
-    };
+    const {
+        activeTool,
+        selectedNodeId,
+        isolatedNodes,
+        handleIsolate,
+        handleSetActiveTool,
+    } = useToolControlsState();
 
     return (
         <>
@@ -28,7 +21,7 @@ export const ToolControls: React.FC = () => {
                   label={t.label}
                   icon={t.icon}
                   isActive={activeTool === t.id}
-                  onClick={() => dispatch(setActiveTool(t.id as 'select' | 'measure' | 'clip' | 'explode'))}
+                  onClick={() => handleSetActiveTool(t.id)}
                 />
             ))}
 
@@ -56,9 +49,10 @@ export const ToolControls: React.FC = () => {
                   label={t.label}
                   icon={t.icon}
                   isActive={activeTool === t.id}
-                  onClick={() => dispatch(setActiveTool(t.id as 'select' | 'measure' | 'clip' | 'explode'))}
+                  onClick={() => handleSetActiveTool(t.id)}
                 />
             ))}
         </>
     );
 };
+

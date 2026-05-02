@@ -1,10 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { StorageService } from '@/infrastructure/storage/storage.service';
-import { CadModelsRepository } from '../repositories/cad-models.repository';
+import { CadModelsRepository } from './cad-models.repository';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
+
 
 @Injectable()
 export class CadModelsService {

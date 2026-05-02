@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL, API_TIMEOUT } from '@/constants/api';
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:3001/v1',
-  timeout: 60000,
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
 });
 
 apiClient.interceptors.request.use(

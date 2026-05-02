@@ -4,6 +4,7 @@ import { FrustumManager } from './FrustumManager';
 import { MemoryManager } from './MemoryManager';
 import { LODManager } from './LODManager';
 import { ChunkLoader } from './ChunkLoader';
+import { STREAMING } from '@/constants/viewer';
 
 export interface ChunkManifest {
   id: string;
@@ -62,7 +63,7 @@ export class ChunkManager {
   public update() {
     if (!this.manifest) return;
     this.updateFrameCounter++;
-    if (this.updateFrameCounter % 10 !== 0) return;
+    if (this.updateFrameCounter % STREAMING.FRAME_DIVISOR !== 0) return;
 
     this.frustumManager.update(this.camera);
 

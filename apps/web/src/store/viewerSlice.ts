@@ -1,10 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface ViewerState {
-  assemblyTree: unknown | null;
-  selectedNodeId: string | null;
-  hiddenNodeIds: string[];
-}
+import { ViewerState } from '@/types/viewer';
 
 const initialState: ViewerState = {
   assemblyTree: null,

@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
-import viewerReducer from './viewerSlice';
-import viewerToolsReducer from './viewerToolsSlice';
+import viewerReducer from '@/store/viewerSlice';
+import viewerToolsReducer from '@/store/viewerToolsSlice';
 
 export const store = configureStore({
   reducer: {

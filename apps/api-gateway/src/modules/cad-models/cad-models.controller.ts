@@ -1,21 +1,23 @@
-import { Controller, Post, Get, Param, Body, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Param, Body, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, BadRequestException, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CadModelsService } from './cad-models.service';
 import { extname } from 'path';
-
+import { JwtAuthGuard } from '@/core/guards/jwt-auth.guard';
+import { User } from '@/core/decorators/user.decorator';
 
 @Controller('cad-models')
+@UseGuards(JwtAuthGuard)
 export class CadModelsController {
   constructor(private readonly _cadModelsService: CadModelsService) { }
 
   @Get()
-  async findAll() {
-    return this._cadModelsService.findAll();
+  async findAll(@User() user: any) {
+    return this._cadModelsService.findAll(user?.id);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this._cadModelsService.findOne(id);
+  async findOne(@Param('id') id: string, @User() user: any) {
+    return this._cadModelsService.findOne(id, user?.id);
   }
 
   @Post(':id/thumbnail')
@@ -23,9 +25,15 @@ export class CadModelsController {
     return this._cadModelsService.updateThumbnail(id, thumbnail);
   }
 
+  @Delete(':id')
+  async delete(@Param('id') id: string, @User() user: any) {
+    return this._cadModelsService.delete(id, user?.id);
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadCadModel(
+    @User() user: any,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -38,6 +46,6 @@ export class CadModelsController {
     if (ext !== '.step' && ext !== '.stp') {
       throw new BadRequestException('Only .step and .stp files are allowed');
     }
-    return this._cadModelsService.processUpload(file);
+    return this._cadModelsService.processUpload(file, user?.id);
   }
 }

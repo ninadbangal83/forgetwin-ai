@@ -51,4 +51,13 @@ export class StorageService implements OnModuleInit {
   async getPresignedUrl(bucket: string, key: string, expiryInSeconds: number = 24 * 60 * 60): Promise<string> {
     return this._minioClient.presignedGetObject(bucket, key, expiryInSeconds);
   }
+
+  async deleteFile(bucket: string, key: string): Promise<void> {
+    try {
+      await this._minioClient.removeObject(bucket, key);
+      this.logger.log(`Deleted object from MinIO: ${bucket}/${key}`);
+    } catch (error) {
+      this.logger.error(`Failed to delete file from MinIO: ${bucket}/${key}`, error);
+    }
+  }
 }

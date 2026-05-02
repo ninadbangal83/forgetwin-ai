@@ -13,11 +13,13 @@ type _any = unknown & { [key: string]: unknown };
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { UploadZone } from '@/features/upload/components/UploadZone';
 import { fetchModels } from '@/features/viewer/services/viewerService';
 import { MODEL_STATUS, POLLING_INTERVAL, STUCK_TIMEOUT_THRESHOLD } from '@/constants/app';
 
 export default function GalleryPage() {
+  const router = useRouter();
   const [models, setModels] = useState<ModelData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -25,8 +27,11 @@ export default function GalleryPage() {
     try {
       const data = await fetchModels();
       setModels(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to connect to API server", err);
+      if (err?.response?.status === 401) {
+        router.push('/login');
+      }
     }
   };
 

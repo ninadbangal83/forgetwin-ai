@@ -1,7 +1,18 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function RootPage() {
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('forgetwin_token');
+      setIsAuth(!!token);
+    }
+  }, []);
+
   return (
     <div className="flex-1 min-h-0 bg-slate-950 text-slate-100 font-sans antialiased relative overflow-hidden flex flex-col justify-center pb-12">
       {/* Background Neon Glowing Accents */}
@@ -28,13 +39,30 @@ export default function RootPage() {
         </p>
 
         {/* Large Premium CTA Button */}
-        <Link 
-          href="/models" 
-          className="inline-flex items-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-500 hover:from-indigo-500 hover:via-purple-500 hover:to-teal-400 text-white font-extrabold px-8 py-4 rounded-2xl shadow-2xl shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 uppercase tracking-widest text-sm select-none"
-        >
-          <span>Explore 3D Designs</span>
-          <span className="text-lg">→</span>
-        </Link>
+        {isAuth ? (
+          <Link 
+            href="/models" 
+            className="inline-flex items-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-500 hover:from-indigo-500 hover:via-purple-500 hover:to-teal-400 text-white font-extrabold px-8 py-4 rounded-2xl shadow-2xl shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 uppercase tracking-widest text-sm select-none"
+          >
+            <span>Go to 3D Designs</span>
+            <span className="text-lg">→</span>
+          </Link>
+        ) : (
+          <div className="flex justify-center items-center gap-4 select-none">
+            <Link 
+              href="/login" 
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-extrabold px-8 py-4 rounded-2xl shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 uppercase tracking-widest text-sm"
+            >
+              Log In
+            </Link>
+            <Link 
+              href="/register" 
+              className="inline-flex items-center gap-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-extrabold px-8 py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 uppercase tracking-widest text-sm"
+            >
+              Register
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Main Feature Layout */}

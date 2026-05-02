@@ -9,6 +9,16 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('forgetwin_token');
+      if (token) {
+        const isAbsolute = config.url?.startsWith('http://') || config.url?.startsWith('https://');
+        const isApiBaseUrl = config.url?.startsWith(API_BASE_URL);
+        if (!isAbsolute || isApiBaseUrl) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    }
     return config;
   },
   (error) => {

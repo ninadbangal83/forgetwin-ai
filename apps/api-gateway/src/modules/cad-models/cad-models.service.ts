@@ -1,11 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { StorageService } from '@/infrastructure/storage/storage.service';
 import { CadModelsRepository } from './cad-models.repository';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
-
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CadMetadata, CadMetadataDocument } from '@/infrastructure/nosql/schemas/cad-metadata.schema';
 
 @Injectable()
 export class CadModelsService {
@@ -15,9 +17,10 @@ export class CadModelsService {
     private readonly _repository: CadModelsRepository,
     private readonly _storage: StorageService,
     @InjectQueue('cad-processing') private readonly _processingQueue: Queue,
+    @InjectModel(CadMetadata.name) private readonly _cadMetadataModel: Model<CadMetadataDocument>,
   ) {}
 
-  async processUpload(file: Express.Multer.File) {
+  async processUpload(file: Express.Multer.File, userId?: string) {
     const modelId = uuidv4();
     const correlationId = uuidv4();
     const ext = extname(file.originalname).toLowerCase();
@@ -35,6 +38,7 @@ export class CadModelsService {
         mimeType: file.mimetype || 'application/octet-stream',
         status: 'UPLOADED',
         correlationId,
+        userId: userId || null,
       });
 
       // Atomic workflow: immediately push to BullMQ after DB write
@@ -47,7 +51,7 @@ export class CadModelsService {
         backoff: { type: 'exponential', delay: 2000 },
       });
 
-      this.logger.log(`Successfully queued model ${modelId} (Correlation: ${correlationId})`);
+      this.logger.log(`Successfully queued model ${modelId} (Correlation: ${correlationId}) for user ${userId}`);
       return model;
     } catch (error) {
       this.logger.error(`Upload failed for ${file.originalname}`, error);
@@ -55,8 +59,10 @@ export class CadModelsService {
     }
   }
 
-  async findAll() {
-    const models = await this._repository.findMany();
+  async findAll(userId?: string) {
+    const models = userId 
+      ? await this._repository.findManyByUserId(userId)
+      : await this._repository.findMany();
 
     const result = [];
     for (const model of models) {
@@ -72,9 +78,16 @@ export class CadModelsService {
     return result;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const model = await this._repository.findById(id);
     if (!model) throw new NotFoundException(`Model ${id} not found`);
+
+    if (userId && model.userId && model.userId !== userId) {
+      throw new UnauthorizedException('You do not have permission to access this model');
+    }
+
+    // Retrieve rich and flexible engineering metadata from MongoDB!
+    const mongoMeta = await this._cadMetadataModel.findOne({ modelId: id }).lean();
 
     let downloadUrl = null;
     if (model.status === 'COMPLETED' && model.processedStorageKey) {
@@ -92,10 +105,45 @@ export class CadModelsService {
       }
     }
 
-    return { ...model, downloadUrl, thumbnailUrl };
+    return {
+      ...model,
+      downloadUrl,
+      thumbnailUrl,
+      // Merge in MongoDB's dynamic metadata
+      metadata: mongoMeta?.metadata || model.metadata || {},
+      assemblyTree: mongoMeta?.assemblyTree || model.assemblyTree || {},
+      bomVariations: mongoMeta?.bomVariations || [],
+      topologyInfo: mongoMeta?.topologyInfo || {},
+      aiEnrichment: mongoMeta?.aiEnrichment || {},
+      engineeringTags: mongoMeta?.engineeringTags || [],
+    };
   }
 
   async updateStatus(id: string, data: Record<string, unknown>) {
+    // If the status is being updated to COMPLETED, let's also write/sync flexible metadata to MongoDB!
+    if (data.status === 'COMPLETED' && (data.metadata || data.assemblyTree)) {
+      try {
+        await this._cadMetadataModel.updateOne(
+          { modelId: id },
+          {
+            $set: {
+              modelId: id,
+              metadata: data.metadata || {},
+              assemblyTree: data.assemblyTree || {},
+              bomVariations: data.bomVariations || [],
+              topologyInfo: data.topologyInfo || {},
+              aiEnrichment: data.aiEnrichment || {},
+              engineeringTags: data.engineeringTags || [],
+            }
+          },
+          { upsert: true }
+        );
+        this.logger.log(`Synced dynamic engineering metadata to MongoDB for model ${id}`);
+      } catch (err) {
+        this.logger.error(`Failed to sync to MongoDB for model ${id}`, err);
+      }
+    }
+
     return this._repository.update(id, data);
   }
 
@@ -120,5 +168,36 @@ export class CadModelsService {
       this.logger.error(`Failed to update thumbnail for model ${id}: ${msg}`);
       throw err;
     }
+  }
+
+  async delete(id: string, userId?: string) {
+    const model = await this._repository.findById(id);
+    if (!model) throw new NotFoundException(`Model ${id} not found`);
+
+    if (userId && model.userId && model.userId !== userId) {
+      throw new UnauthorizedException('You do not have permission to delete this model');
+    }
+
+    // 1. Delete from storage (MinIO)
+    if (model.storageKey) {
+      await this._storage.deleteFile('raw-cad', model.storageKey);
+    }
+    if (model.processedStorageKey) {
+      await this._storage.deleteFile('processed-models', model.processedStorageKey);
+    }
+    if (model.thumbnailKey) {
+      await this._storage.deleteFile('processed-models', model.thumbnailKey);
+    }
+
+    // 2. Delete dynamic engineering metadata from MongoDB
+    try {
+      await this._cadMetadataModel.deleteOne({ modelId: id });
+      this.logger.log(`Deleted metadata from MongoDB for model ${id}`);
+    } catch (err) {
+      this.logger.error(`Failed to delete MongoDB metadata for model ${id}`, err);
+    }
+
+    // 3. Delete relational CAD model entry from Postgres
+    return this._repository.deleteById(id);
   }
 }

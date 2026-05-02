@@ -10,10 +10,18 @@ export class CadModelsRepository {
     return this._prisma.cadModel.create({ data });
   }
 
+  async findManyByUserId(userId: string) {
+    return this._prisma.cadModel.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true, userId: true },
+    });
+  }
+
   async findMany() {
     return this._prisma.cadModel.findMany({
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true },
+      select: { id: true, name: true, status: true, createdAt: true, fileSize: true, thumbnailKey: true, userId: true },
     });
   }
 
@@ -24,5 +32,9 @@ export class CadModelsRepository {
   async update(id: string, data: Record<string, unknown>) {
     // @ts-ignore
     return this._prisma.cadModel.update({ where: { id }, data });
+  }
+
+  async deleteById(id: string) {
+    return this._prisma.cadModel.delete({ where: { id } });
   }
 }

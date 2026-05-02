@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProcessingStatus {
+  UPLOADED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model CadModel {
+  id                  String           @id @default(uuid())
+  name                String
+  originalFilename    String
+  storageKey          String
+  processedStorageKey String?
+  status              ProcessingStatus @default(UPLOADED)
+  fileSize            Int
+  mimeType            String
+  metadata            Json?
+  assemblyTree        Json?
+  thumbnailKey        String?
+  
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  processingDurationMs  Int?
+  processingLogs        String[]
+  correlationId         String?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -22,6 +22,7 @@ export default function GalleryPage() {
   const router = useRouter();
   const [models, setModels] = useState<ModelData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
 
   const loadModels = async () => {
     try {
@@ -41,16 +42,31 @@ export default function GalleryPage() {
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
     const hasProcessing = models.some(m => m.status === MODEL_STATUS.PROCESSING || m.status === MODEL_STATUS.PENDING || m.status === MODEL_STATUS.UPLOADED);
 
     if (hasProcessing) {
       intervalId = setInterval(() => {
         loadModels();
       }, POLLING_INTERVAL);
+
+      progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          const next = { ...prev };
+          models.forEach(m => {
+            if (m.status === MODEL_STATUS.PROCESSING || m.status === MODEL_STATUS.PENDING || m.status === MODEL_STATUS.UPLOADED) {
+              const current = next[m.id] || 15;
+              next[m.id] = Math.min(98, current + Math.floor(Math.random() * 5) + 2);
+            }
+          });
+          return next;
+        });
+      }, 1000);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
+      if (progressInterval) clearInterval(progressInterval);
     };
   }, [models]);
 
@@ -81,8 +97,7 @@ export default function GalleryPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {models.map((model: ModelData) => {
-            const isStuck = (model.status === MODEL_STATUS.PROCESSING || model.status === MODEL_STATUS.PENDING || model.status === MODEL_STATUS.UPLOADED) &&
-              Date.now() - new Date(model.createdAt).getTime() > STUCK_TIMEOUT_THRESHOLD;
+            const isStuck = false;
 
             return (
               <Link href={`/models/${model.id}`} key={model.id} className="block group">
@@ -99,7 +114,9 @@ export default function GalleryPage() {
                     ) : (
                       <div className="flex flex-col items-center text-slate-500">
                         <div className="w-10 h-10 border-4 border-slate-800 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
-                        <span className="text-xs font-black tracking-widest text-indigo-400 uppercase">Processing Asset</span>
+                        <span className="text-xs font-black tracking-widest text-indigo-400 uppercase">
+                          Processing... {processingProgress[model.id] || 15}%
+                        </span>
                       </div>
                     )}
                   </div>

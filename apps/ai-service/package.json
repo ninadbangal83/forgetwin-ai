@@ -2,7 +2,7 @@
   "name": "@forgetwin/ai-service",
   "version": "0.0.0",
   "scripts": {
+    "dev": "echo No direct node script needed for python service. Launch main.py with python",
     "lint": "echo No source files to lint in ai-service"
   }
 }
-

@@ -17,6 +17,7 @@ export class ModelLoader {
   public chunkManager: ChunkManager;
   public onStreamingMetrics?: (_metrics: _any) => void;
   private lastBox: THREE.Box3 | null = null;
+  public onFitToView?: (box: THREE.Box3) => void;
 
   constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, controls: OrbitControls, clipping?: ClippingManager, explode?: ExplodeManager) {
     this.camera = camera;
@@ -104,6 +105,27 @@ export class ModelLoader {
 
         if (onProgress) onProgress(100);
 
+        let autoFitAttempts = 0;
+        const intervalId = setInterval(() => {
+            const currentBox = new THREE.Box3();
+            currentBox.setFromObject(this.chunkManager.getRootGroup());
+            
+            const isValidBox = !currentBox.isEmpty() && 
+                               isFinite(currentBox.min.x) && isFinite(currentBox.min.y) && isFinite(currentBox.min.z) &&
+                               isFinite(currentBox.max.x) && isFinite(currentBox.max.y) && isFinite(currentBox.max.z);
+            
+            autoFitAttempts++;
+            if (isValidBox || autoFitAttempts > 12) {
+                this.fitToView();
+                for (let i = 0; i < 11; i++) {
+                    this.chunkManager.update();
+                }
+                clearInterval(intervalId);
+            }
+        }, 500);
+
+
+
     } catch(err) {
         console.error("Failed to load streaming manifest", err);
         throw err;
@@ -132,7 +154,7 @@ export class ModelLoader {
       });
 
       geometryMap.forEach((data, _hash) => {
-          if (data.instances.length > 5) {
+          if (data.instances.length > 1) {
               data.instances.forEach(inst => {
                   if (inst.mesh) inst.mesh.visible = false;
               });
@@ -164,24 +186,58 @@ export class ModelLoader {
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     
-    // Dynamically adjust control pan and zoom speeds based on model's size
-    this.controls.panSpeed = Math.max(CAMERA_FITTING.MIN_PAN_SPEED, maxDim / CAMERA_FITTING.PAN_SPEED_DIVISOR);
-    this.controls.zoomSpeed = Math.max(CAMERA_FITTING.MIN_ZOOM_SPEED, maxDim / CAMERA_FITTING.ZOOM_SPEED_DIVISOR);
+    this.controls.minDistance = 0.1;
+    this.controls.maxDistance = Math.max(1000, maxDim * 4);
+    
+    this.controls.panSpeed = 1.0;
+    this.controls.zoomSpeed = 1.2;
 
     const fov = this.camera.fov * (Math.PI / 180);
     const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * CAMERA_FITTING.CAMERA_Z_MULTIPLIER;
     
-    this.camera.position.set(center.x + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET, center.y + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET, center.z + cameraZ);
+    this.camera.position.set(
+        center.x + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET,
+        center.y + cameraZ * CAMERA_FITTING.CAMERA_POS_OFFSET,
+        center.z + cameraZ
+    );
+    
     this.camera.lookAt(center);
     this.controls.target.copy(center);
     this.controls.update();
   }
 
   public fitToView() {
-    if (this.lastBox) {
-      this.fitCameraToBox(this.lastBox);
+    const box = new THREE.Box3();
+    const modelGroup = this.chunkManager.getRootGroup();
+    
+    try {
+        box.setFromObject(modelGroup);
+    } catch (err) {
+        console.warn("Could not compute box from scene object", err);
+    }
+
+    const isValidBox = !box.isEmpty() && 
+                       isFinite(box.min.x) && isFinite(box.min.y) && isFinite(box.min.z) &&
+                       isFinite(box.max.x) && isFinite(box.max.y) && isFinite(box.max.z);
+
+    if (!isValidBox && this.lastBox) {
+        box.copy(this.lastBox);
+    } else if (!isValidBox) {
+        box.set(new THREE.Vector3(-100, -100, -100), new THREE.Vector3(100, 100, 100));
+    }
+
+    if (this.onFitToView) {
+        this.onFitToView(box);
+    }
+
+    this.fitCameraToBox(box);
+    for (let i = 0; i < 11; i++) {
+        this.chunkManager.update();
     }
   }
+
+
+
 
   public dispose() {
     this.chunkManager.dispose();

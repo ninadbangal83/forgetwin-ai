@@ -25,10 +25,13 @@ export const HierarchyRow: React.FC<HierarchyRowProps> = ({
     >
       <div style={{ paddingLeft: `${node.level * 16}px` }} className="flex items-center w-full h-full">
         <span 
-          className="w-5 h-5 flex items-center justify-center text-slate-500 mr-1 opacity-60 hover:opacity-100"
-          onClick={(e) => onToggleExpand(node.id, e)}
+          className="w-5 h-5 flex items-center justify-center text-indigo-400 font-extrabold mr-1 hover:text-indigo-300 active:scale-95 transition-all duration-200 cursor-pointer select-none text-[11px]"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand(node.id, e);
+          }}
         >
-          {node.hasChildren ? (node.isExpanded ? '▾' : '▸') : '•'}
+          {node.hasChildren ? (node.isExpanded ? '▾' : '▸') : ''}
         </span>
         
         <span className="mr-2 text-xs">{icon}</span>

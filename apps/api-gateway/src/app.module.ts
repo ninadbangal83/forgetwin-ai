@@ -10,6 +10,7 @@ import { HealthModule } from '@/modules/health/health.module';
 import { StreamingModule } from '@/modules/streaming/streaming.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ReviewsModule } from '@/modules/reviews/reviews.module';
+import { AiModule } from '@/modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ReviewsModule } from '@/modules/reviews/reviews.module';
     StreamingModule,
     AuthModule,
     ReviewsModule,
+    AiModule,
   ],
   controllers: [],
   providers: [],

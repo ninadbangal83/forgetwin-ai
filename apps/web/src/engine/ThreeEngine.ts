@@ -16,6 +16,7 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 export class ThreeEngine {
   public scene: THREE.Scene;
+  public gridHelper: THREE.GridHelper;
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
   public controls: OrbitControls;
@@ -57,9 +58,9 @@ export class ThreeEngine {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(VIEWER_COLORS.BACKGROUND);
 
-    const gridHelper = new THREE.GridHelper(200, 50, VIEWER_COLORS.GRID_MAJOR, VIEWER_COLORS.GRID_MINOR);
-    gridHelper.position.y = -10;
-    this.scene.add(gridHelper);
+    this.gridHelper = new THREE.GridHelper(200, 50, VIEWER_COLORS.GRID_MAJOR, VIEWER_COLORS.GRID_MINOR);
+    this.gridHelper.position.y = -10;
+    this.scene.add(this.gridHelper);
 
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -99,6 +100,14 @@ export class ThreeEngine {
     this.measurement = new MeasurementManager(this.scene);
 
     this.modelLoader = new ModelLoader(this.scene, this.camera, this.controls, this.clipping, this.explode);
+    this.modelLoader.onFitToView = (box) => {
+      if (!box.isEmpty() && isFinite(box.min.y)) {
+        this.gridHelper.position.y = box.min.y - 1;
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        this.gridHelper.scale.set(maxDim / 20, 1, maxDim / 20);
+      }
+    };
 
     this.raycaster = new THREE.Raycaster();
     this.raycaster.firstHitOnly = true; // BVH extreme optimization

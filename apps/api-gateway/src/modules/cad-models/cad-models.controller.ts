@@ -34,13 +34,7 @@ export class CadModelsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadCadModel(
     @User() user: any,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 100 * 1024 * 1024 }),
-        ],
-      }),
-    ) file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const ext = extname(file.originalname).toLowerCase();
     if (ext !== '.step' && ext !== '.stp') {

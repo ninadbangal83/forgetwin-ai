@@ -47,6 +47,44 @@ export function MetadataPanel({ globalMetadata }: MetadataPanelProps) {
                     <span className="font-mono font-bold text-teal-400">{selectedNode.metrics.faces.toLocaleString()}</span>
                   </div>
                 )}
+                {selectedNode.metrics.volume !== undefined && (
+                  <div className="col-span-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <span className="text-slate-400 font-medium mb-0.5">Physical Volume</span>
+                    <span className="font-mono font-bold text-teal-400">{selectedNode.metrics.volume} mm³</span>
+                  </div>
+                )}
+                {selectedNode.metrics.dimensions && (
+                  <div className="col-span-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <span className="text-slate-400 font-medium mb-0.5">Bounding Dimensions (L × W × H)</span>
+                    <span className="font-mono font-bold text-teal-400">
+                      {selectedNode.metrics.dimensions.length} × {selectedNode.metrics.dimensions.width} × {selectedNode.metrics.dimensions.height} mm
+                    </span>
+                  </div>
+                )}
+                {selectedNode.metrics.density !== undefined && (
+                  <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <span className="text-slate-400 font-medium mb-0.5">Density</span>
+                    <span className="font-mono font-bold text-teal-400">{selectedNode.metrics.density} g/cm³</span>
+                  </div>
+                )}
+                {selectedNode.metrics.boundingBox && selectedNode.metrics.boundingBox.min && selectedNode.metrics.boundingBox.max && (
+                  <div className="col-span-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <span className="text-slate-400 font-medium mb-0.5">3D Bounds (Min / Max)</span>
+                    <span className="font-mono font-bold text-teal-400 text-[11px]">
+                      Min: [{selectedNode.metrics.boundingBox.min.map(String).join(', ')}]
+                      <br />
+                      Max: [{selectedNode.metrics.boundingBox.max.map(String).join(', ')}]
+                    </span>
+                  </div>
+                )}
+                {selectedNode.metrics.centerOfMass !== undefined && Array.isArray(selectedNode.metrics.centerOfMass) && (
+                  <div className="col-span-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <span className="text-slate-400 font-medium mb-0.5">Center of Mass</span>
+                    <span className="font-mono font-bold text-teal-400">
+                      [{selectedNode.metrics.centerOfMass.map(String).join(', ')}]
+                    </span>
+                  </div>
+                )}
                 {selectedNode.metrics.isInstanced && (
                   <div className="col-span-2 bg-indigo-950/40 p-3 rounded-xl border border-indigo-800/40 flex flex-col">
                     <span className="font-bold text-indigo-300">GPU Instanced geometry</span>

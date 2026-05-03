@@ -17,6 +17,7 @@ import { ExplodeSlider } from '@/features/viewer/tools/ExplodeSlider';
 
 import { useViewerLayout } from '@/features/viewer/hooks/useViewerLayout';
 import { EngineeringReviewManager } from '@/features/viewer/components/EngineeringReviewManager';
+import { EngineeringCopilotPanel } from '@/features/ai/EngineeringCopilotPanel';
 
 interface ViewerLayoutProps {
   modelId: string;
@@ -32,6 +33,7 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
   } = useViewerLayout(modelId);
 
   const [showReviews, setShowReviews] = React.useState(false);
+  const [showAI, setShowAI] = React.useState(false);
   const activeTool = useSelector((state: RootState) => state.viewerTools.activeTool);
 
   if (!modelData) {
@@ -80,6 +82,21 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="relative group select-none">
+          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 opacity-0 invisible group-hover:opacity-100 group-hover:visible bg-black text-white text-xs font-extrabold px-3.5 py-2 rounded-xl border border-slate-800 shadow-2xl transition-all duration-200 pointer-events-none select-none whitespace-nowrap z-50">
+            Engineering Copilot
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-black" />
+          </div>
+          <button
+            onClick={() => setShowAI(!showAI)}
+            className={`p-3 text-sm font-black rounded-xl border flex items-center justify-center backdrop-blur-md transition-all duration-300 outline-none hover:scale-105 active:scale-95 select-none ${showAI ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-500/20' : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/60 hover:border-emerald-500/40 hover:text-white'}`}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </button>
         </div>
@@ -138,6 +155,14 @@ export function ViewerLayout({ modelId }: ViewerLayoutProps) {
               onAddAnnotationMarker={(id, position, note) => window.dispatchEvent(new CustomEvent('viewer-add-annotation', { detail: { id, position, note } }))}
               onClearAnnotationMarkers={() => window.dispatchEvent(new CustomEvent('viewer-clear-annotations'))}
             />
+          </div>
+        </div>
+      )}
+
+      {showAI && (
+        <div className="absolute top-16 left-[710px] z-[60] w-[380px] bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 h-[calc(100%-6rem)] max-h-[820px] rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto">
+          <div className="flex-1 overflow-y-auto">
+            <EngineeringCopilotPanel modelId={modelId} />
           </div>
         </div>
       )}

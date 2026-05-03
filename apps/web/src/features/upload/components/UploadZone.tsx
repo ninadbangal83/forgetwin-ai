@@ -37,7 +37,7 @@ export function UploadZone({ onSuccess }: { onSuccess?: () => void }) {
         disabled={!file || uploading}
         className={`w-full py-2.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white shadow-lg transition-all duration-300 ${!file || uploading ? 'bg-slate-800 text-slate-500 cursor-not-allowed border-slate-700/50 shadow-none' : 'bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-500 hover:to-teal-400 shadow-indigo-500/10 hover:shadow-indigo-500/20 active:scale-[0.98]'}`}
       >
-        {uploading ? `Uploading... ${progress}%` : 'Upload STEP File'}
+        {uploading ? (progress === 100 ? 'Saving on Server...' : `Uploading... ${progress}%`) : 'Upload STEP File'}
       </button>
     </div>
   );

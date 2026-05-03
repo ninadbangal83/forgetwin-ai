@@ -97,5 +97,15 @@ def run_cad_processing(modelId: str, storageKey: str, correlationId: str):
         }
         send_callback(payload)
     finally:
+        import gc
         if temp_step_path and os.path.exists(temp_step_path):
             os.remove(temp_step_path)
+        # Clear heavy reference variables
+        unique_shapes = None
+        instances = None
+        unique_geometries = None
+        # Clean circular references via multiple GC passes
+        gc.collect()
+        gc.collect()
+
+

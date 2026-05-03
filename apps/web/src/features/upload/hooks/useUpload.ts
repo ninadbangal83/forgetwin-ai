@@ -28,10 +28,12 @@ export function useUpload(onSuccess?: () => void) {
 
     setUploading(true);
     setError(null);
-    setProgress(20);
+    setProgress(0);
 
     try {
-      await uploadModel(file);
+      await uploadModel(file, (percent: number) => {
+        setProgress(percent);
+      });
 
       setProgress(100);
       setSuccess(true);

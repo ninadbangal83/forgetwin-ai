@@ -52,4 +52,49 @@ def build_assembly_tree(shape_tool, label, parent_transform=np.eye(4), unique_sh
             "center": center
         })
 
+        vol = 0.0
+        center_of_mass = center
+        xmin, ymin, zmin, xmax, ymax, zmax = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRepBndLib import brepbndlib_Add
+            bbox = Bnd_Box()
+            brepbndlib_Add(shape, bbox)
+            xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
+            dx = xmax - xmin
+            dy = ymax - ymin
+            dz = zmax - zmin
+        except Exception:
+            pass
+
+        try:
+            from OCC.Core.GProp import GProp_GProps
+            from OCC.Core.BRepGProp import brepgprop
+            props = GProp_GProps()
+            brepgprop.Volume(shape, props)
+            vol = float(props.Mass())
+            cm = props.CentreOfMass()
+            center_of_mass = [float(cm.X()), float(cm.Y()), float(cm.Z())]
+        except Exception:
+            pass
+
+        if vol <= 0.001:
+            # Fallback to oriented bounding box volume
+            vol = dx * dy * dz
+
+        node_data["metrics"] = {
+            "volume": round(vol, 2),
+            "centerOfMass": [round(c, 2) for c in center_of_mass],
+            "boundingBox": {
+                "min": [round(xmin, 2), round(ymin, 2), round(zmin, 2)],
+                "max": [round(xmax, 2), round(ymax, 2), round(zmax, 2)]
+            },
+            "dimensions": {
+                "length": round(dx, 2),
+                "width": round(dy, 2),
+                "height": round(dz, 2)
+            },
+            "density": 7.85
+        }
+
     return node_data

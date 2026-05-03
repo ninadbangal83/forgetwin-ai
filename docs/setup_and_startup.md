@@ -6,7 +6,7 @@ This guide outlines the complete setup and startup sequence for the `forgetwin-a
 
 ## 1. Prerequisites & Infrastructure Setup
 
-Ensure all backend infrastructure services (PostgreSQL, MongoDB, Redis, MinIO, and Qdrant) are running via Docker Compose.
+Ensure all backend infrastructure services (PostgreSQL, Redis, MinIO, and Qdrant) are running via Docker Compose.
 
 ```bash
 cd infrastructure/docker

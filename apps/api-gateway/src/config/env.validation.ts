@@ -5,7 +5,6 @@ export const envValidationSchema = z.object({
   PORT: z.string().default('3001').transform(Number),
   
   DATABASE_URL: z.string().url().describe('PostgreSQL connection string'),
-  MONGO_URI: z.string().url().describe('MongoDB connection string'),
   REDIS_URL: z.string().url().describe('Redis connection string'),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379').transform(Number),

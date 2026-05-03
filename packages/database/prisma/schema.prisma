@@ -25,6 +25,10 @@ model CadModel {
   mimeType            String
   metadata            Json?
   assemblyTree        Json?
+  bomVariations       Json?
+  topologyInfo        Json?
+  aiEnrichment        Json?
+  engineeringTags     Json?
   thumbnailKey        String?
   
   processingStartedAt   DateTime?
@@ -42,6 +46,7 @@ model CadModel {
   @@index([status])
   @@index([createdAt])
   @@index([userId])
+  versions            CadModelVersion[]
 }
 
 model User {
@@ -56,4 +61,48 @@ model User {
 
   @@index([email])
 }
+
+model CadModelVersion {
+  versionId       String       @id @default(uuid())
+  modelId         String
+  versionNumber   Int
+  parentVersionId String?
+  createdAt       DateTime     @default(now())
+  createdBy       String?
+  reviewStatus    String       @default("DRAFT")
+  snapshotData    Json
+  
+  cadModel        CadModel     @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  annotations     Annotation[]
+  shareLinks      ShareLink[]
+
+  @@index([modelId])
+  @@index([createdAt])
+}
+
+model Annotation {
+  annotationId  String          @id @default(uuid())
+  versionId     String
+  partId        String?
+  worldPosition Json?
+  note          String
+  createdBy     String?
+  createdAt     DateTime        @default(now())
+
+  cadVersion    CadModelVersion @relation(fields: [versionId], references: [versionId], onDelete: Cascade)
+
+  @@index([versionId])
+}
+
+model ShareLink {
+  token         String          @id @default(uuid())
+  versionId     String
+  expiresAt     DateTime?
+  permissions   String          @default("READ_ONLY")
+
+  cadVersion    CadModelVersion @relation(fields: [versionId], references: [versionId], onDelete: Cascade)
+
+  @@index([versionId])
+}
+
 

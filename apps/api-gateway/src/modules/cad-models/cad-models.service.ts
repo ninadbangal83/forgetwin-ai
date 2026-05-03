@@ -5,9 +5,6 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { CadMetadata, CadMetadataDocument } from '@/infrastructure/nosql/schemas/cad-metadata.schema';
 
 @Injectable()
 export class CadModelsService {
@@ -17,7 +14,6 @@ export class CadModelsService {
     private readonly _repository: CadModelsRepository,
     private readonly _storage: StorageService,
     @InjectQueue('cad-processing') private readonly _processingQueue: Queue,
-    @InjectModel(CadMetadata.name) private readonly _cadMetadataModel: Model<CadMetadataDocument>,
   ) {}
 
   async processUpload(file: Express.Multer.File, userId?: string) {
@@ -86,9 +82,6 @@ export class CadModelsService {
       throw new UnauthorizedException('You do not have permission to access this model');
     }
 
-    // Retrieve rich and flexible engineering metadata from MongoDB!
-    const mongoMeta = await this._cadMetadataModel.findOne({ modelId: id }).lean();
-
     let downloadUrl = null;
     if (model.status === 'COMPLETED' && model.processedStorageKey) {
       downloadUrl = await this._storage.getPresignedUrl('processed-models', model.processedStorageKey);
@@ -109,41 +102,16 @@ export class CadModelsService {
       ...model,
       downloadUrl,
       thumbnailUrl,
-      // Merge in MongoDB's dynamic metadata
-      metadata: mongoMeta?.metadata || model.metadata || {},
-      assemblyTree: mongoMeta?.assemblyTree || model.assemblyTree || {},
-      bomVariations: mongoMeta?.bomVariations || [],
-      topologyInfo: mongoMeta?.topologyInfo || {},
-      aiEnrichment: mongoMeta?.aiEnrichment || {},
-      engineeringTags: mongoMeta?.engineeringTags || [],
+      metadata: model.metadata || {},
+      assemblyTree: model.assemblyTree || {},
+      bomVariations: (model as any).bomVariations || [],
+      topologyInfo: (model as any).topologyInfo || {},
+      aiEnrichment: (model as any).aiEnrichment || {},
+      engineeringTags: (model as any).engineeringTags || [],
     };
   }
 
   async updateStatus(id: string, data: Record<string, unknown>) {
-    // If the status is being updated to COMPLETED, let's also write/sync flexible metadata to MongoDB!
-    if (data.status === 'COMPLETED' && (data.metadata || data.assemblyTree)) {
-      try {
-        await this._cadMetadataModel.updateOne(
-          { modelId: id },
-          {
-            $set: {
-              modelId: id,
-              metadata: data.metadata || {},
-              assemblyTree: data.assemblyTree || {},
-              bomVariations: data.bomVariations || [],
-              topologyInfo: data.topologyInfo || {},
-              aiEnrichment: data.aiEnrichment || {},
-              engineeringTags: data.engineeringTags || [],
-            }
-          },
-          { upsert: true }
-        );
-        this.logger.log(`Synced dynamic engineering metadata to MongoDB for model ${id}`);
-      } catch (err) {
-        this.logger.error(`Failed to sync to MongoDB for model ${id}`, err);
-      }
-    }
-
     return this._repository.update(id, data);
   }
 
@@ -189,15 +157,7 @@ export class CadModelsService {
       await this._storage.deleteFile('processed-models', model.thumbnailKey);
     }
 
-    // 2. Delete dynamic engineering metadata from MongoDB
-    try {
-      await this._cadMetadataModel.deleteOne({ modelId: id });
-      this.logger.log(`Deleted metadata from MongoDB for model ${id}`);
-    } catch (err) {
-      this.logger.error(`Failed to delete MongoDB metadata for model ${id}`, err);
-    }
-
-    // 3. Delete relational CAD model entry from Postgres
+    // 2. Delete relational CAD model entry from Postgres
     return this._repository.deleteById(id);
   }
 }

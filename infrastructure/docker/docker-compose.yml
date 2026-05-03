@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -25,32 +23,6 @@ services:
         limits:
           cpus: '0.50'
           memory: 256M
-
-  mongodb:
-    image: mongo:6-jammy
-    container_name: forgetwin_mongodb
-    init: true
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-forge_admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-forge_secret}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-forgetwin_cad_meta}
-    ports:
-      - "27017:27017"
-    volumes:
-      - forgetwin_mongo_data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - forgetwin_network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
 
   redis:
     image: redis:7-alpine
@@ -148,7 +120,6 @@ networks:
 
 volumes:
   forgetwin_pg_data:
-  forgetwin_mongo_data:
   forgetwin_redis_data:
   forgetwin_minio_data:
   forgetwin_qdrant_data:

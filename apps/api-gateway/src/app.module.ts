@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { envValidationSchema } from '@/config/env.validation';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
-import { NosqlModule } from '@/infrastructure/nosql/nosql.module';
 import { StorageModule } from '@/infrastructure/storage/storage.module';
 import { QueueModule } from '@/infrastructure/queue/queue.module';
 import { CadModelsModule } from '@/modules/cad-models/cad-models.module';
@@ -18,7 +17,6 @@ import { AuthModule } from '@/modules/auth/auth.module';
       validate: (env: Record<string, unknown>) => envValidationSchema.parse(env),
     }),
     DatabaseModule,
-    NosqlModule,
     StorageModule,
     QueueModule,
     CadModelsModule,

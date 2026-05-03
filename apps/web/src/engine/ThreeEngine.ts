@@ -312,7 +312,95 @@ export class ThreeEngine {
     this.stats.end();
   };
 
+  private annotationMarkers: THREE.Mesh[] = [];
+
+  public addAnnotationMarker(id: string, position: { x: number, y: number, z: number }, note: string) {
+    const geom = new THREE.SphereGeometry(2, 16, 16);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xff0055,
+      emissive: 0xaa0033,
+      roughness: 0.1,
+    });
+    const sphere = new THREE.Mesh(geom, mat);
+    sphere.position.set(position.x, position.y, position.z);
+    sphere.userData = { id, note, type: 'annotation' };
+    this.scene.add(sphere);
+    this.annotationMarkers.push(sphere);
+  }
+
+  public clearAnnotationMarkers() {
+    this.annotationMarkers.forEach(m => {
+      this.scene.remove(m);
+      m.geometry.dispose();
+      if (m.material instanceof THREE.Material) m.material.dispose();
+    });
+    this.annotationMarkers = [];
+  }
+
+  public restoreSnapshot(snapshot: any) {
+    if (!snapshot) return;
+
+    this.clearAnnotationMarkers();
+    this.measurement.clear();
+
+    if (snapshot.camera) {
+      this.camera.position.set(snapshot.camera.x, snapshot.camera.y, snapshot.camera.z);
+    }
+    if (snapshot.orbitTarget) {
+      this.controls.target.set(snapshot.orbitTarget.x, snapshot.orbitTarget.y, snapshot.orbitTarget.z);
+    }
+    this.controls.update();
+
+    if (snapshot.hiddenNodeIds) {
+      this.setHiddenNodes(snapshot.hiddenNodeIds);
+    }
+
+    if (snapshot.isolatedNodeIds) {
+      this.setIsolatedNodes(snapshot.isolatedNodeIds);
+    }
+
+    if (typeof snapshot.explodeFactor === 'number') {
+      this.explode.setExplodeFactor(snapshot.explodeFactor, this.modelLoader.currentModel);
+    }
+
+    if (snapshot.clipPlanes) {
+      this.clipping.setPlanes(snapshot.clipPlanes.x, snapshot.clipPlanes.y, snapshot.clipPlanes.z);
+      this.clipping.setEnabled(snapshot.clipPlanes.enabled);
+    }
+
+    if (snapshot.measurements) {
+      this.measurement.restoreMeasurements(snapshot.measurements);
+    }
+  }
+
+  public highlightDiff(diff: { addedParts: any[], removedParts: any[], modifiedParts: any[] }) {
+    if (!this.modelLoader.currentModel) return;
+
+    const addedIds = (diff.addedParts || []).map(p => p.id);
+    const removedIds = (diff.removedParts || []).map(p => p.id);
+    const modifiedIds = (diff.modifiedParts || []).map(p => p.id);
+
+    const addMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x005500 });
+    const remMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 });
+    const modMat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0x555500 });
+
+    this.modelLoader.currentModel.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh && !(mesh instanceof THREE.InstancedMesh)) {
+        const nid = mesh.userData.nodeId;
+        if (addedIds.includes(nid)) {
+          mesh.material = addMat;
+        } else if (removedIds.includes(nid)) {
+          mesh.material = remMat;
+        } else if (modifiedIds.includes(nid)) {
+          mesh.material = modMat;
+        }
+      }
+    });
+  }
+
   public dispose() {
+
     window.removeEventListener('resize', this.onWindowResize);
     this.renderer.domElement.removeEventListener('click', this.onClick);
     this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove);

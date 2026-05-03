@@ -38,6 +38,9 @@ export const viewerToolsSlice = createSlice({
     clearMeasurements: (state) => {
       state.measurements = [];
     },
+    setMeasurements: (state, action: PayloadAction<Measurement[]>) => {
+      state.measurements = action.payload || [];
+    },
     setIsolatedNodes: (state, action: PayloadAction<string[]>) => {
       state.isolatedNodeIds = action.payload;
     },
@@ -55,6 +58,7 @@ export const {
   toggleClippingInvert,
   addMeasurement,
   clearMeasurements,
+  setMeasurements,
   setIsolatedNodes,
   clearIsolation
 } = viewerToolsSlice.actions;

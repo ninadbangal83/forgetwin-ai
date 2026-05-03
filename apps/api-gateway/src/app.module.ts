@@ -9,6 +9,7 @@ import { CadProcessingModule } from '@/modules/cad-processing/cad-processing.mod
 import { HealthModule } from '@/modules/health/health.module';
 import { StreamingModule } from '@/modules/streaming/streaming.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { ReviewsModule } from '@/modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -24,8 +25,10 @@ import { AuthModule } from '@/modules/auth/auth.module';
     HealthModule,
     StreamingModule,
     AuthModule,
+    ReviewsModule,
   ],
   controllers: [],
   providers: [],
 })
 export class AppModule {}
+

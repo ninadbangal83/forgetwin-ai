@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ThreeEngine } from '@/engine/ThreeEngine';
 import { RootState } from '@/store/store';
 import { setSelectedNodeId } from '@/store/viewerSlice';
-import { addMeasurement } from '@/store/viewerToolsSlice';
+import { addMeasurement, setMeasurements } from '@/store/viewerToolsSlice';
 import { StreamingMetrics } from '@/types/viewer';
 
 export function useViewerShell(modelId: string, downloadUrl: string) {
@@ -27,6 +27,9 @@ export function useViewerShell(modelId: string, downloadUrl: string) {
 
     const engine = new ThreeEngine(containerRef.current);
     engineRef.current = engine;
+    if (typeof window !== 'undefined') {
+      (window as any).viewerEngine = engine;
+    }
 
     // Trigger explicit window resize to correctly calculate size of 3D canvas
     const timer = setTimeout(() => {
@@ -125,6 +128,37 @@ export function useViewerShell(modelId: string, downloadUrl: string) {
   useEffect(() => {
     if (engineRef.current) engineRef.current.setIsolatedNodes(isolatedNodes);
   }, [isolatedNodes]);
+
+  useEffect(() => {
+    const handleRestoreSnapshot = (e: Event) => {
+      const snap = (e as CustomEvent).detail;
+      if (engineRef.current) (engineRef.current as any).restoreSnapshot(snap);
+      if (snap.measurements) dispatch(setMeasurements(snap.measurements));
+    };
+    const handleHighlightDiff = (e: Event) => {
+      const diff = (e as CustomEvent).detail;
+      if (engineRef.current) (engineRef.current as any).highlightDiff(diff);
+    };
+    const handleAddAnnotation = (e: Event) => {
+      const { id, position, note } = (e as CustomEvent).detail;
+      if (engineRef.current) (engineRef.current as any).addAnnotationMarker(id, position, note);
+    };
+    const handleClearAnnotations = () => {
+      if (engineRef.current) (engineRef.current as any).clearAnnotationMarkers();
+    };
+
+    window.addEventListener('viewer-restore-snapshot', handleRestoreSnapshot);
+    window.addEventListener('viewer-highlight-diff', handleHighlightDiff);
+    window.addEventListener('viewer-add-annotation', handleAddAnnotation);
+    window.addEventListener('viewer-clear-annotations', handleClearAnnotations);
+
+    return () => {
+      window.removeEventListener('viewer-restore-snapshot', handleRestoreSnapshot);
+      window.removeEventListener('viewer-highlight-diff', handleHighlightDiff);
+      window.removeEventListener('viewer-add-annotation', handleAddAnnotation);
+      window.removeEventListener('viewer-clear-annotations', handleClearAnnotations);
+    };
+  }, []);
 
   return {
     containerRef,

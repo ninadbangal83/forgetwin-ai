@@ -1,23 +1,42 @@
-FROM condaforge/miniforge3:latest
+# ==========================================
+# STAGE 1: Builder Stage
+# ==========================================
+FROM condaforge/miniforge3:latest AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (mesa required for OpenGL operations in OCC)
-RUN apt-get update && apt-get install -y libgl1 libglx0 && rm -rf /var/lib/apt/lists/*
+# Install system dependencies needed for OCC
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglx0 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create conda environment with pythonocc-core and web dependencies.
-# Using conda-forge channel is highly recommended for pythonocc to prevent C++ compilation nightmares.
-RUN conda create -n cadenv -c conda-forge python=3.10 pythonocc-core fastapi uvicorn pydantic minio requests trimesh numpy -y
+# Use mamba to create the environment. Mamba uses C++ libsolv engine
+# which resolves dependencies in seconds rather than hours.
+RUN mamba create -n cadenv -c conda-forge \
+    python=3.10 pythonocc-core fastapi uvicorn pydantic minio requests trimesh numpy -y && \
+    mamba clean -afy
 
-# Force RUN commands to use the new environment
-SHELL ["conda", "run", "-n", "cadenv", "/bin/bash", "-c"]
 
-# Copy Python processing application
+# ==========================================
+# STAGE 2: Final Runtime Stage
+# ==========================================
+FROM condaforge/miniforge3:latest AS runner
+
+WORKDIR /app
+
+# Install only the runtime OS dependencies needed for PythonOCC (OpenGL)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglx0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the exact installed environment from the builder stage
+COPY --from=builder /opt/conda/envs/cadenv /opt/conda/envs/cadenv
+
+# Copy our source files
 COPY . .
 
 # Expose FastAPI port
 EXPOSE 8000
 
-# Set Entrypoint to automatically activate conda environment
+# Set entrypoint using the conda environment copied over
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "cadenv", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
